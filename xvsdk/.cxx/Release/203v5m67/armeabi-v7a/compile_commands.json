@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a",
+  "command": "/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi24 --gcc-toolchain=/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64 --sysroot=/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dxslam_wrapper_EXPORTS -I/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/include -I/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/xvsdk/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -Oz -DNDEBUG  -fPIC -o wrapper/CMakeFiles/xslam_wrapper.dir/xslam_android.cpp.o -c /home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/wrapper/xslam_android.cpp",
+  "file": "/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/wrapper/xslam_android.cpp"
+},
+{
+  "directory": "/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a",
+  "command": "/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi24 --gcc-toolchain=/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64 --sysroot=/home/blues_zheng/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dxslam_wrapper_EXPORTS -I/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/include -I/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/xvsdk/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -Oz -DNDEBUG  -fPIC -o wrapper/CMakeFiles/xslam_wrapper.dir/yuv_to_rgb.cpp.o -c /home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/wrapper/yuv_to_rgb.cpp",
+  "file": "/home/blues_zheng/文档/android-non-root-demo/xvsdk/src/main/cpp/wrapper/yuv_to_rgb.cpp"
+}
+]

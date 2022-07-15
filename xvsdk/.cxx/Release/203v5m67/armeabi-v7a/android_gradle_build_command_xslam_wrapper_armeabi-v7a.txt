@@ -1,0 +1,7 @@
+Executable : /home/blues_zheng/Android/Sdk/cmake/3.18.1/bin/ninja
+arguments : 
+-C
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a
+xslam_wrapper
+jvmArgs : 
+

@@ -1,0 +1,94 @@
+2021-07-19: v3.1.0
+* Fix Device::hidWriteAndRead
+* Automatically adapt to different devices according to the software and hardware version numbers in the json configuration file
+* For Android, can build samples by run ndk-build under android/jni/
+* Add linear and angular acceleration in pose
+* Add Slam::clearStereoPlanes and Slam::clearTofPlanes
+* Add RGBD stream in xv-sdk-ex.h
+
+2021-04-25: v3.0.1
+* Fix mixed slam edge timestamp
+* Fix mixed slam when not using fisheye images
+* Implement ColorImage::toRgb
+
+2021-04-02: v3.0.0
+* Simplify CSLAM API
+* Support edge fusion slam mode
+* Implement display interfaces
+* Update fisheye on VSC
+* Fix slam not work if start before register callback
+* Fix tof plane detection in demo-api
+* Support demo-api initialization with json file
+
+2021-03-23: v2.0.0
+* New API first release
+* Support json initialization
+* Support fisheye on VSC
+
+2020-09-25: v1.2.8
+* Add prediction with 3dof and  add lost callback
+
+2020-09-25: v1.2.7
+* Read stereo display calibration and stereo fisheye pdm (opencv) calibration
+* Update get_pose
+* Update CNN
+* Fix stereo timestamp
+
+2020-09-25: v1.2.6
+* Add examples
+
+2020-09-25: v1.2.5
+* Update gesture licence
+
+2020-09-25: v1.2.4
+* Unity support read calibration
+
+2020-09-25: v1.2.3
+* Fix 3dof bias
+* Fix hot-plug about mixed 6dof
+* Make hot-plug interfaces easy to use
+* Fisheye timestamp
+
+2020-09-22: v1.2.2
+* Add EdgePlus::slam()
+
+2020-09-22: v1.2.1
+* Add demo
+
+2020-09-18: v1.2.0
+* Add 3dof
+* Add tof plane detection
+* Add CSLAM map share functions
+* Add read/write IMU bias
+* Add read/write calibration
+* Add CNN object detection
+* Add apply coordinate
+* Support hot-plug
+* Change definition of enum RgbResolution
+* Change definition of struct stereo
+* Fix hid-sdk memory leak
+* Fix save6dofandimu
+* Fix mixed mode bugs
+
+2020-09-07: v1.1.9
+* Add CSLAM API and example
+* Add plane from ToF API and example
+
+2020-09-04: v1.1.7
+* Update save6dofandimu
+
+2020-08-24: v1.1.6
+* Update mixed mode implement
+* UVC SDK support TOF
+
+2020-08-20: v1.1.1
+* Fix VSC stop
+
+2020-08-19: v1.1.0
+* Fix `Edge::setEnabled`
+* Timestamp correction in mixed mode
+* Remove added interface in libusb
+
+2020-08-20: v1.0.5
+* Add eyetracking support
+* VSC stream manually start

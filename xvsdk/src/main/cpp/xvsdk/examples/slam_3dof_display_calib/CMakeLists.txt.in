@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(slam_3dof_display_calib)
+
+find_package( xvsdk REQUIRED )
+
+set(SRCS slam_3dof_display_calib.cpp)
+
+ADD_EXECUTABLE( ${PROJECT_NAME} ${SRCS} )
+TARGET_LINK_LIBRARIES( ${PROJECT_NAME} ${xvsdk_LIBRARIES} ${OpenCV_LIBS} -pthread )
+

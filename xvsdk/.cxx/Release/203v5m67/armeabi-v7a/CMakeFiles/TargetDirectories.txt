@@ -1,0 +1,13 @@
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/install/strip.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/install/local.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/install.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/list_install_components.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/CMakeFiles/edit_cache.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/install/strip.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/install/local.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/install.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/list_install_components.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/edit_cache.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/rebuild_cache.dir
+/home/blues_zheng/文档/android-non-root-demo/xvsdk/.cxx/Release/203v5m67/armeabi-v7a/wrapper/CMakeFiles/xslam_wrapper.dir
