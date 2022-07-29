@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/button_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="[mixed] switch to edge+ mode" />
+
+        <Button
+            android:id="@+id/button_rgb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="rgb solution" />
+
+        <include
+            layout="@layout/accelerometer_display"
+            android:id="@+id/accelerometerDisplay"
+            android:orientation="vertical"
+            android:layout_width="411dp"
+            android:layout_height="75dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"></include>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp"
+            android:orientation="horizontal"
+            android:weightSum="1">
+
+            <include
+                android:id="@+id/poseDisplay"
+                layout="@layout/pose_display"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_weight="0.75"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"></include>
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="115dp"
+                android:layout_height="75dp"
+                android:layout_weight="0.25"
+                android:scaleType="centerInside"
+                app:srcCompat="@mipmap/logo" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/stereoView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/accelerometerDisplay"
+            app:srcCompat="@color/colorPrimary" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cl_rgb_tof"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/stereoView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/rgbView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/tofView"
+                app:srcCompat="@color/colorAccent" />
+
+            <TextView
+                android:id="@+id/label_rgb"
+                android:text="RGB："
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/rgbView"
+                app:layout_constraintLeft_toLeftOf="@+id/rgbView"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="10dp" />
+
+
+            <TextView
+                android:id="@+id/tv_solution"
+                android:text="1920X1080"
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_rgb"
+                app:layout_constraintLeft_toRightOf="@+id/label_rgb" />
+
+            <TextView
+                android:id="@+id/label_fps"
+                android:text="FPS:  "
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/label_rgb"
+                app:layout_constraintLeft_toLeftOf="@+id/label_rgb"
+                android:layout_marginTop="10dp" />
+
+            <TextView
+                android:id="@+id/tv_fps"
+                android:text="0"
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_fps"
+                app:layout_constraintLeft_toRightOf="@+id/label_fps" />
+
+
+            <ImageView
+                android:id="@+id/tofView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@id/rgbView"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/rgbView"
+                app:layout_constraintRight_toLeftOf="@id/tofIrView"
+                app:srcCompat="@android:color/holo_blue_bright" />
+
+            <TextView
+                android:id="@+id/label_tof"
+                android:text="TOF："
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_rgb"
+                app:layout_constraintLeft_toLeftOf="@+id/tofView"
+                android:layout_marginLeft="10dp" />
+
+            <TextView
+                android:id="@+id/tv_tof_solution"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_tof"
+                app:layout_constraintLeft_toRightOf="@+id/label_tof" />
+
+            <ImageView
+                android:id="@+id/tofIrView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@id/rgbView"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/tofView"
+                app:layout_constraintRight_toRightOf="parent"
+                app:srcCompat="@android:color/holo_blue_bright" />
+
+            <TextView
+                android:id="@+id/label_ir"
+                android:text="IR:"
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_rgb"
+                app:layout_constraintLeft_toLeftOf="@+id/tofIrView"
+                android:layout_marginLeft="10dp" />
+
+            <TextView
+                android:id="@+id/tv_ir_solution"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/label_ir"
+                app:layout_constraintLeft_toRightOf="@+id/label_ir" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <ImageView
+            android:id="@+id/sgbmView"
+            android:layout_width="match_parent"
+            android:layout_height="283dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cl_rgb_tof"
+            app:srcCompat="@color/colorAccent" />
+    </LinearLayout>
+</ScrollView>

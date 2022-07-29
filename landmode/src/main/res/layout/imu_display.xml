@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<org.xvisio.xslam.landmode.ImuDisplay xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/my_linear_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ProgressBar
+        android:id="@+id/negativeBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:rotation="180"
+        android:progress="100"
+        android:max="200"
+        android:progressTint="#f00" />
+
+    <ProgressBar
+        android:id="@+id/positiveBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:progress="100"
+        android:max="200"
+        android:progressTint="#f00" />
+
+</org.xvisio.xslam.landmode.ImuDisplay>
