@@ -200,6 +200,18 @@ public class XCamera extends XVisioClass {
         mTofIrListener = listener;
     }
 
+    public static synchronized void addUsbDevice(String deviceName, int fileDescriptor) {
+        nAddUsbDevice(deviceName, fileDescriptor);
+    }
+
+    public static synchronized void removeUsbDevice(int fileDescriptor) {
+        nRemoveUsbDevice(fileDescriptor);
+    }
+
+    private static native void nAddUsbDevice(String deviceName, int fileDescriptor);
+
+    private static native void nRemoveUsbDevice(int fileDescriptor);
+
     private static native void nSetRgbSolution(int mode);
 
     private static native void nSetSlamMode(int mode);

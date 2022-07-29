@@ -84,7 +84,7 @@ public class DeviceWatcher extends XVisioClass {
     private void removeDevice(UsbDesc desc) {
         Log.d(TAG, "Removing device: " + desc.name);
 
-        nRemoveUsbDevice(desc.descriptor);
+        XCamera.removeUsbDevice(desc.descriptor);
         desc.connection.close();
         for (DeviceListener listener : mAppDeviceListener) {
             try {
@@ -107,7 +107,7 @@ public class DeviceWatcher extends XVisioClass {
         UsbDesc desc = new UsbDesc(device.getDeviceName(), conn.getFileDescriptor(), conn);
         Log.d(TAG, "Adding device: " + desc.name);
         mDescriptors.put(device.getDeviceName(), desc);
-        nAddUsbDevice(desc.name, desc.descriptor);
+        XCamera.addUsbDevice(desc.name, desc.descriptor);
 
         for (DeviceListener listener : mAppDeviceListener) {
             try {
@@ -129,14 +129,4 @@ public class DeviceWatcher extends XVisioClass {
         }
     }
 
-    private static native void nAddUsbDevice(String deviceName, int fileDescriptor);
-
-    private static native void nRemoveUsbDevice(int fileDescriptor);
-
-    /*private static void nAddUsbDevice(String deviceName, int fileDescriptor){
-        Log.d(TAG, "nAddUsbDevice: " + deviceName + " " + fileDescriptor);
-    }
-    private static void nRemoveUsbDevice(int fileDescriptor){
-        Log.d(TAG, "nRemoveUsbDevice: " + fileDescriptor);
-    }*/
 }

@@ -10,6 +10,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 include_directories( ${CMAKE_SOURCE_DIR}/xvsdk/include )
+include_directories( ${CMAKE_SOURCE_DIR}/xvsdk/include2 )
 
 link_directories( ${CMAKE_SOURCE_DIR}/xvsdk/libs/${ANDROID_ABI} )
 

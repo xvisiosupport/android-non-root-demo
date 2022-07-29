@@ -12,20 +12,16 @@
 #include <cmath>
 
 #include <android/log.h>
-//#include <opencv2/opencv.hpp>
 #include <thread>
 #include <chrono>
 #include <math.h>
 #include <xv-sdk.h>
-//#include "callVpu.h"
-//#include "callVpuDual.h"
+#include <xv-sdk-ex.h>
 #include "unity-wrapper.h"
-//#include "xslam_android.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "fps_count.hpp"
-#include "../xvsdk/include2/xv-sdk-ex.h"
 
 #define LOG_TAG "xslam#wrapper"
 #define LOG_DEBUG(...)                                                \
@@ -137,7 +133,6 @@ static JavaVM *jvm = 0;
 static jclass s_XCameraClass = nullptr;
 
 static jmethodID s_imuCallback = nullptr;
-
 static jmethodID s_tofCallback = nullptr;
 static jmethodID s_tofIrCallback = nullptr;
 
@@ -173,7 +168,7 @@ static const xv::sgbm_config sgbm_config
 void onImuCallback(xv::Imu const &imu) {
     JNIEnv *jniEnv;
     jvm->AttachCurrentThread(&jniEnv, NULL);
-    if (!s_XCameraClass || !jniEnv) {
+    if (!jniEnv || !s_XCameraClass || !s_imuCallback) {
         return;
     }
 
@@ -185,16 +180,9 @@ void onImuCallback(xv::Imu const &imu) {
         LOG_DEBUG("onImuStream fps = %d", int(fc.fps()));
     }
 
-    if (s_imuCallback == nullptr) {
-        s_imuCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "imuCallback", "(DDD)V");
-    }
-
-    if (s_imuCallback) {
-        jniEnv->CallStaticVoidMethod(s_XCameraClass, s_imuCallback,
-                                     static_cast<double>(imu.accel[0]),
-                                     static_cast<double>(imu.accel[1]),
-                                     static_cast<double>(imu.accel[2]));
-    }
+    jniEnv->CallStaticVoidMethod(s_XCameraClass, s_imuCallback, static_cast<double>(imu.accel[0]),
+                                 static_cast<double>(imu.accel[1]),
+                                 static_cast<double>(imu.accel[2]));
 }
 
 void stopImuStream() {
@@ -224,12 +212,8 @@ void onSlamCallback(xv::Pose const &pose) {
         return;
     }
 
-    if (s_poseCallback == nullptr) {
-        s_poseCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "poseCallback", "(DDDDDD)V");
-    }
-
     if (s_poseCallback) {
-        auto pitchYawRoll = xv::rotationToQuaternion(pose.rotation());
+        auto pitchYawRoll = xv::rotationToPitchYawRoll(pose.rotation());
         jniEnv->CallStaticVoidMethod(s_XCameraClass, s_poseCallback,
                                      static_cast<double>(pose.x()),
                                      static_cast<double>(pose.y()),
@@ -267,12 +251,7 @@ void onRgbCallback(xv::ColorImage const &rgb) {
         return;
     }
 
-    if (s_rgbCallback == nullptr) {
-        s_rgbCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "rgbCallback", "(II[I)V");
-    }
-
     if (s_rgbCallback) {
-
         int w = rgb.width;
         int h = rgb.height;
         int s = w * h;
@@ -286,10 +265,6 @@ void onRgbCallback(xv::ColorImage const &rgb) {
 
         jniEnv->CallStaticVoidMethod(s_XCameraClass, s_rgbCallback, w, h, data);
         jniEnv->DeleteLocalRef(data);
-    }
-
-    if (s_rgbFpsCallback == nullptr) {
-        s_rgbFpsCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "rgbFpsCallback", "(I)V");
     }
 
     if (s_rgbFpsCallback) {
@@ -329,25 +304,15 @@ void startRgbStream() {
 void onTofCallback(xv::DepthImage const &im) {
     JNIEnv *jniEnv;
     jvm->AttachCurrentThread(&jniEnv, NULL);
-    if (!s_XCameraClass || !jniEnv) {
+    if (!jniEnv || !s_XCameraClass) {
         return;
     }
 
-    int w = im.width;
-    int h = im.height;
-    LOG_DEBUG("onTofStream type: %d, width = %d,height = %d", im.type, w, h);
     std::shared_ptr<const xv::DepthImage> tmp = std::make_shared<xv::DepthImage>(im);;
-    unsigned srcWidth = tmp->width;
-    unsigned srcHeight = tmp->height;
+    unsigned w = tmp->width;
+    unsigned h = tmp->height;
     double distance = 4.5;
-
-    if (s_tofCallback == nullptr) {
-        s_tofCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "tofCallback", "(II[I)V");
-    }
-
-    if (s_tofIrCallback == nullptr) {
-        s_tofIrCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "tofIrCallback", "(II[I)V");
-    }
+    LOG_DEBUG("onTofStream type: %d, width = %d,height = %d", im.type, w, h);
 
     int s = w * h;
     auto d = const_cast<unsigned char *>(tmp->data.get());
@@ -364,25 +329,31 @@ void onTofCallback(xv::DepthImage const &im) {
             unsigned int u = static_cast<unsigned int>( std::max(0.0f, max));
             const auto &cc = rgb_colors.at(u);
             rgbVectors[i] = RgbaStruct{cc.at(0), cc.at(1), cc.at(2), 255};
-            // unsigned char avg = (cc.at(0) + cc.at(1) + cc.at(2)) / 3;
-            // rgbVectors[i] = RgbaStruct{avg, avg, avg, 255};
         }
     } else if (tmp->type == xv::DepthImage::Type::IR) {
-        // out = cv::Mat::zeros(tof->height, tof->width, CV_8UC3);
-        float dmax = 2494.0; // maybe 7494,2494,1498,1249 see mode_manage.h in sony toflib
+        // float dmax = 2494.0; // maybe 7494,2494,1498,1249 see mode_manage.h in sony toflib
         auto tmp_d = reinterpret_cast<unsigned short const *>(tmp->data.get());
+        unsigned short dmin = tmp_d[0];
+        unsigned short dmax = tmp_d[0];
         for (unsigned int i = 0; i < tmp->height * tmp->width; i++) {
             unsigned short d = tmp_d[i];
-            auto max = std::min(255.0f, d * 255.0f / dmax);
-            unsigned int u = static_cast<unsigned int>( std::max(0.0f, max));
-            //if( u < 15 )
-            //    u = 0;
-            const auto &cc = rgb_colors.at(u);
-            unsigned char avg = (cc.at(0) + cc.at(1) + cc.at(2)) / 3;
-            // avg = avg > 100 ? 255 : 0;
-            rgbVectors[i] = RgbaStruct{cc.at(0), cc.at(1), cc.at(2), 255};
-            // rgbVectors[i] = RgbaStruct{avg, avg, avg, 255};
-            // out.at<cv::Vec3b>( i/tof->width, i%tof->width ) = cv::Vec3b(cc.at(2), cc.at(1),cc.at(0) );
+            if (d > dmax) {
+                dmax = d;
+            }
+
+            if (d < dmin) {
+                dmin = d;
+            }
+        }
+
+        double dFactor = 255.0 / (double) (dmax - dmin);
+        // LOG_DEBUG("onTofCallback IR dmin=%d, dmax=%d, dFactor1=%f", dmin, dmax, dFactor);
+        for (unsigned int i = 0; i < tmp->height * tmp->width; i++) {
+            unsigned short d = tmp_d[i];
+            int dv = (int) ((d - dmin) * dFactor);
+            // dv = (int)(255.0 * pow(d / dwidth, 1.0 / gamma));
+            unsigned char pixel = (unsigned char) dv;
+            rgbVectors[i] = RgbaStruct{pixel, pixel, pixel, 255};
         }
     } else if (tmp->type == xv::DepthImage::Type::Depth_32) {
         float dmax = 7.5;
@@ -403,9 +374,6 @@ void onTofCallback(xv::DepthImage const &im) {
     jintArray data = jniEnv->NewIntArray(s);
     jint *body = jniEnv->GetIntArrayElements(data, 0);
     memcpy(body, rgbVectors.data(), s * sizeof(RgbaStruct));
-
-// cv::Mat mrgb(srcHeight, srcWidth, CV_8UC4, body);
-// cv::cvtColor(adjMap, mrgb, cv::COLOR_BGR2RGBA);
 
     if (tmp->type == xv::DepthImage::Type::IR && s_tofIrCallback) {
         jniEnv->CallStaticVoidMethod(s_XCameraClass, s_tofIrCallback, w, h, data);
@@ -450,11 +418,6 @@ void onStrereoCallback(xv::FisheyeImages const &stereo) {
     }
 
     jvm->AttachCurrentThread(&jniEnv, NULL);
-
-    if (s_stereoCallback == nullptr) {
-        s_stereoCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "stereoCallback",
-                                                     "(II[I)V");
-    }
 
     if (s_stereoCallback) {
         int w = stereo.images[0].width;
@@ -514,11 +477,6 @@ void onSgbmCallback(xv::SgbmImage const &sgbm_image) {
 
     jvm->AttachCurrentThread(&jniEnv, NULL);
 
-    if (s_sgbmCallback == nullptr) {
-        s_sgbmCallback = jniEnv->GetStaticMethodID(s_XCameraClass, "sgbmCallback",
-                                                   "(II[I)V");
-    }
-
     if (s_sgbmCallback) {
         if (sgbm_image.type == xv::SgbmImage::Type::Depth) {
             int w = sgbm_image.width;
@@ -543,22 +501,6 @@ void onSgbmCallback(xv::SgbmImage const &sgbm_image) {
                 unsigned int u = static_cast<unsigned int>( std::max(0.0f, max));
                 const auto &cc = rgb_colors.at(u);
                 rgbVectors[i] = RgbaStruct{cc.at(0), cc.at(1), cc.at(2), 255};
-
-/*                double distance_mm = tmp_d[i];
-                double distance_m = distance_mm / 1000.;
-                double d = std::max(min_distance_m, std::min(distance_mm, max_distance_m));
-                d = (d - min_distance_m) / (min_distance_m - min_distance_m);
-                if (distance_mm <= min_distance_m || distance_m > max_distance_m)
-                {
-                    rgbVectors[i] = RgbaStruct{0,0,0,255};
-                }
-                else
-                {
-                    char b = static_cast<char>(255.0 * std::min(std::max(0.0, 1.5 - std::abs(1.0 - 4.0 * (d - 0.5))), 1.0));
-                    char g = static_cast<char>(255.0 * std::min(std::max(0.0, 1.5 - std::abs(1.0 - 4.0 * (d - 0.25))), 1.0));
-                    char r = static_cast<char>(255.0 * std::min(std::max(0.0, 1.5 - std::abs(1.0 - 4.0 * d)), 1.0));
-                    rgbVectors[i] = RgbaStruct{r,g,b,255};
-                }*/
             }
 
             jintArray data = jniEnv->NewIntArray(s);
@@ -590,7 +532,7 @@ void startSgbmStream() {
         return;
     }
 
-    stopStereoStream();
+    stopSgbmStream();
     device->sgbmCamera()->setSgbmResolution(xv::SgbmCamera::Resolution::SGBM_640x480);
     sgmbId = device->sgbmCamera()->registerCallback(onSgbmCallback);
     device->sgbmCamera()->start(sgbm_config);
@@ -598,15 +540,12 @@ void startSgbmStream() {
 
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_xvisio_xvsdk_DeviceWatcher_nAddUsbDevice(JNIEnv
-                                                  *env,
-                                                  jclass type, jstring
-                                                  deviceName_,
-                                                  jint fileDescriptor
+Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
+                                            *env,
+                                            jclass type, jstring
+                                            deviceName_,
+                                            jint fileDescriptor
 ) {
-// const char *deviceName = env->GetStringUTFChars(deviceName_, 0);
-// LOG_DEBUG("AddUsbDevice, adding device: %s, descriptor: %d", std::string(deviceName).c_str(), fileDescriptor );
-
     static bool firstCall = true;
     if (firstCall) {
         firstCall = false;
@@ -680,14 +619,22 @@ Java_org_xvisio_xvsdk_XCamera_nSetRgbSolution(JNIEnv *env, jclass type, jint mod
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_xvisio_xvsdk_DeviceWatcher_nRemoveUsbDevice(JNIEnv *env, jclass type,
-                                                     jint fileDescriptor) {
+Java_org_xvisio_xvsdk_XCamera_nRemoveUsbDevice(JNIEnv *env, jclass type,
+                                               jint fileDescriptor) {
 
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_xvisio_xvsdk_XCamera_initCallbacks(JNIEnv *env, jclass type) {
     s_XCameraClass = reinterpret_cast<jclass>(env->NewGlobalRef(type));
+    s_imuCallback = env->GetStaticMethodID(s_XCameraClass, "imuCallback", "(DDD)V");
+    s_tofCallback = env->GetStaticMethodID(s_XCameraClass, "tofCallback", "(II[I)V");
+    s_tofIrCallback = env->GetStaticMethodID(s_XCameraClass, "tofIrCallback", "(II[I)V");
+    s_stereoCallback = env->GetStaticMethodID(s_XCameraClass, "stereoCallback", "(II[I)V");
+    s_sgbmCallback = env->GetStaticMethodID(s_XCameraClass, "sgbmCallback", "(II[I)V");
+    s_rgbCallback = env->GetStaticMethodID(s_XCameraClass, "rgbCallback", "(II[I)V");
+    s_rgbFpsCallback = env->GetStaticMethodID(s_XCameraClass, "rgbFpsCallback", "(I)V");
+    s_poseCallback = env->GetStaticMethodID(s_XCameraClass, "poseCallback", "(DDDDDD)V");
 }
 
 extern "C" JNIEXPORT void JNICALL

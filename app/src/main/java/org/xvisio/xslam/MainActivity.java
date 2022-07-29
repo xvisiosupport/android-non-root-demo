@@ -1,16 +1,5 @@
 package org.xvisio.xslam;
 
-import org.xvisio.xvsdk.SgbmListener;
-import org.xvisio.xvsdk.StreamData;
-import org.xvisio.xvsdk.TofIrListener;
-import org.xvisio.xvsdk.TofListener;
-import org.xvisio.xvsdk.XCamera;
-import org.xvisio.xvsdk.DeviceListener;
-import org.xvisio.xvsdk.ImuListener;
-import org.xvisio.xvsdk.StereoListener;
-import org.xvisio.xvsdk.PoseListener;
-import org.xvisio.xvsdk.RgbListener;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -32,11 +21,21 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
+
+import org.xvisio.xvsdk.DeviceListener;
+import org.xvisio.xvsdk.ImuListener;
+import org.xvisio.xvsdk.PoseListener;
+import org.xvisio.xvsdk.RgbListener;
+import org.xvisio.xvsdk.SgbmListener;
+import org.xvisio.xvsdk.StereoListener;
+import org.xvisio.xvsdk.StreamData;
+import org.xvisio.xvsdk.TofIrListener;
+import org.xvisio.xvsdk.TofListener;
+import org.xvisio.xvsdk.XCamera;
 
 import java.util.List;
 
@@ -84,10 +83,10 @@ public class MainActivity extends AppCompatActivity {
         checkBoxSlam.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b) {
+                if (b) {
                     mCamera.startStream(XCamera.Stream.SLAM);
                 } else {
-                    mCamera.stopStreams();
+                    mCamera.stopStream(XCamera.Stream.SLAM);
                 }
             }
         });
@@ -96,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         checkBoxImu.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b) {
+                if (b) {
                     mCamera.startStream(XCamera.Stream.IMU);
                 } else {
                     mCamera.stopStream(XCamera.Stream.IMU);
@@ -134,11 +133,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onDenied(List<String> permissions, boolean never) {
                         if (never) {
-                            Toast.makeText(mAppContext, "被永久拒绝授权，请手动授予存储权限", (int) 1000).show();
+                            Toast.makeText(mAppContext, "被永久拒绝授权，请手动授予存储权限", 1000).show();
                             // 如果是被永久拒绝就跳转到应用权限系统设置页面
                             XXPermissions.startPermissionActivity(mAppContext, permissions);
                         } else {
-                            Toast.makeText(mAppContext, "获取存储权限失败", (int) 1000).show();
+                            Toast.makeText(mAppContext, "获取存储权限失败", 1000).show();
                         }
                     }
                 });

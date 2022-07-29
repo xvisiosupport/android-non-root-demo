@@ -1,10 +1,8 @@
 package org.xvisio.xslam;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 public class PoseDisplay extends LinearLayout {
