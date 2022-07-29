@@ -1,8 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classxv_1_1details_1_1Transform__.html" title=" " alt="" coords="5,35,168,76"/>
-<area shape="rect" id="node2" href="$classxv_1_1details_1_1PoseRot__.html" title=" " alt="" coords="216,5,367,47"/>
-<area shape="rect" id="node6" href="$structxv_1_1TransformF.html" title="Represents atransformation (or pose) with translation and rotation matrix in float type." alt="" coords="232,71,351,98"/>
-<area shape="rect" id="node3" href="$classxv_1_1details_1_1Pose__.html" title=" " alt="" coords="415,5,549,47"/>
-<area shape="rect" id="node4" href="$classxv_1_1details_1_1PosePred__.html" title=" " alt="" coords="597,5,755,47"/>
-<area shape="rect" id="node5" href="$structxv_1_1PoseF.html" title="Class representing a 6dof pose at a timestamp with a linear model for prediction." alt="" coords="803,13,887,39"/>
-</map>

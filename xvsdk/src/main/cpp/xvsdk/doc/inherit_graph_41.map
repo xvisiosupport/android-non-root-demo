@@ -1,5 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classxv_1_1Stream.html" title=" " alt="" coords="5,23,195,65"/>
-<area shape="rect" id="node2" href="$classxv_1_1GestureStream.html" title="A class to handle gusture." alt="" coords="251,5,394,32"/>
-<area shape="rect" id="node3" href="$classxv_1_1GestureStreamEX.html" title="A class to handle extern gusture data. Only support on Android now." alt="" coords="243,56,403,83"/>
-</map>

@@ -1,0 +1,10 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="xv::Stream\< std::vector\l\< Object \> const & \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxv_1_1Stream.html",tooltip=" "];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="xv::ObjectDetector",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxv_1_1ObjectDetector.html",tooltip="A class to handle callbacks of the object detector (CNN)"];
+}

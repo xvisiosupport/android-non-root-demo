@@ -365,6 +365,76 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class=
 <div class="line"> </div>
 <div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xbe, 0x9a, 0x06, 0x00, 0x00}, result);</div>
 </div><!-- fragment --></li>
+<li><p class="startli">Breathing lamp speed setting command:</p>
+<p class="startli">Header: 0x02, 0xbe, 0x9a</p>
+<p class="startli">Type: 0x08</p>
+<p class="startli">Data: 0x01-fast, 0x02-middle, 0x03-slow.</p>
+<p class="startli">Comment: Set breathing lamp speed.</p>
+</li>
+</ul>
+<div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xbe, 0x9a, 0x08, 0x01}, result);</div>
+</div><!-- fragment --><ul>
+<li><p class="startli">Breathing lamp close command:</p>
+<p class="startli">Header: 0x02, 0xbe, 0x9a</p>
+<p class="startli">Type: 0x06</p>
+<p class="startli">Data: 0x06-close.</p>
+<p class="startli">Comment: Close breathing lamp. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xbe, 0x9a, 0x02, 0x06}, result);</div>
+</div><!-- fragment --></li>
+<li><p class="startli">Breathing lamp param reading command:</p>
+<p class="startli">Header: 0x02, 0xbe, 0x9a</p>
+<p class="startli">Type: 0x09</p>
+<p class="startli">Comment: The data will be returned in result value, value1-breathing lamp mode, value2-color index, value3-breathing lamp speed. For detailed information, please refer to AW2026 chip register manual. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xbe, 0x9a, 0x09}, result);</div>
+</div><!-- fragment --></li>
+<li><p class="startli">Save display panel 2/3D mode command:</p>
+<p class="startli">Header: 0x02, 0xfe, 0x20</p>
+<p class="startli">Type: 0x16</p>
+<p class="startli">Data: 0x02-72hz, 0x03-90hz.</p>
+<p class="startli">Comment: The data will be saved in flash. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xfe, 0x20, 0x16, 0x02}, result);</div>
+</div><!-- fragment --></li>
+<li><p class="startli">Read display panel 2/3D mode command:</p>
+<p class="startli">Header: 0x02, 0xfe, 0x20</p>
+<p class="startli">Type: 0x17</p>
+<p class="startli">Comment: The data will be returned in result value, value1-Hz in flash, value2-Hz of real display. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xfe, 0x20, 0x17}, result);</div>
+</div><!-- fragment --></li>
+<li><p class="startli">Set display panel brightness command:</p>
+<p class="startli">Header: 0x02, 0xfe, 0x20</p>
+<p class="startli">Type: 0x02</p>
+<p class="startli">Data: Range: 0x01-0x20, 32 levels. 1 is darkest, 32 is brightest.</p>
+<p class="startli">Comment: The data will be saved in flash. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xfe, 0x20, 0x02, 0x01}, result);</div>
+</div><!-- fragment --></li>
+<li><p class="startli">Read display panel brightness command:</p>
+<p class="startli">Header: 0x02, 0xfe, 0x20</p>
+<p class="startli">Type: 0x02</p>
+<p class="startli">Comment: The data will be returned in result value, value1-display brightness. </p><div class="fragment"><div class="line">example:</div>
+<div class="line"> </div>
+<div class="line">   std::vector&lt;unsigned char&gt; result;</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordtype">bool</span> bOK = <a class="code" href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">hidWriteAndRead</a>({0x02, 0xfe, 0x20, 0x02}, result);</div>
+</div><!-- fragment --></li>
 <li><p class="startli">Set auto display pane brightness command:</p>
 <p class="startli">Header: 0x02, 0xfe, 0x20</p>
 <p class="startli">Type: 0x04</p>

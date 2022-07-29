@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(all_stream)
-
-find_package( xvsdk REQUIRED )
-
 set(SRCS all_stream.cpp)
+
+if ( WIN32 )
+    set(xvsdk_DIR "../../cmake/xvsdk")
+endif()
+find_package( xvsdk REQUIRED )
+set(xvsdk_INCLUDE ${xvsdk_INCLUDE_DIRS}/xvsdk})
+include_directories( ${xvsdk_INCLUDE} )
 
 find_package(OpenCV QUIET)
 if( OpenCV_FOUND )

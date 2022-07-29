@@ -1899,6 +1899,7 @@ int main( int argc, char* argv[] ) try
 
             break;
         case 13:
+        {
             // Stop get IMU
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
@@ -1907,7 +1908,11 @@ int main( int argc, char* argv[] ) try
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
+#endif      
+            auto slam = device->slam();            
+            auto slamEx = dynamic_cast<xv::SlamEx*>(slam.get());            
+            slamEx->setEnableSurface(true);            
+            slamEx->setEnableSurfacePlanes(true);            // Get plane data
             // Get plane data
             device->tofCamera()->start();
             // !!! Must call registerTofPlanesCallback before slam()->start
@@ -1920,6 +1925,7 @@ int main( int argc, char* argv[] ) try
             startGetPose(device->slam());
 
             break;
+        }
         case 14:
             // stop mix slam
             device->slam()->stop();
@@ -2778,6 +2784,7 @@ int main( int argc, char* argv[] ) try
                     break;
                 }
             }
+            break;
         }
         case 50:
         {
@@ -3165,6 +3172,8 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
+
+            //only support android platform with gaze.
             std::cout << "gaze start" << std::endl;
             if (device->gaze())
             {
@@ -3184,6 +3193,7 @@ int main( int argc, char* argv[] ) try
         }
         case 70:
         {
+            //only support android platform with gaze.
             if(device->gaze()){
                 device->gaze()->unregisterCallback(gazeCallbackId);
                 device->gaze()->stop();
@@ -3196,18 +3206,20 @@ int main( int argc, char* argv[] ) try
             if (device->orientationStream()) {
                 device->orientationStream()->unregisterCallback(imuId);
             }
-
+            //only support android platform with gesture.
             void* JVM;
             // std::string password = "test";
-
+            
             printf("gestureEX()->start\n");
-            device->gestureEX()->start(JVM);
+            std::string so_path = "";
+            device->gestureEX()->start(JVM,so_path);
             printf("gestureEX()->registerCallback\n");
             GestureEXId = device->gestureEX()->registerCallback(GestureCallbackEX);
             break;
         }
         case 72:
         {
+            //only support android platform with gesture.
             if(device->gestureEX()){
                 device->gestureEX()->unregisterCallback(GestureEXId);
                 device->gestureEX()->stop();
@@ -3220,17 +3232,19 @@ int main( int argc, char* argv[] ) try
             if (device->orientationStream()) {
                 device->orientationStream()->unregisterCallback(imuId);
             }
-
+            //only support android platform with gesture.
             void* JVM;
             // std::string password = "test";
 
-            device->gestureEX()->start(JVM);
+            std::string so_path = "";
+            device->gestureEX()->start(JVM,so_path);
             GesturePosEXId = device->gestureEX()->registerPosCallback(GesturePosCallbackEX);
 
             break;
         }
         case 74:
         {
+            //only support android platform with gesture.
             if(device->gestureEX()){
                 device->gestureEX()->unregisterPosCallback(GesturePosEXId);
                 device->gestureEX()->stop();
@@ -3243,7 +3257,7 @@ int main( int argc, char* argv[] ) try
             if (device->orientationStream()) {
                 device->orientationStream()->unregisterCallback(imuId);
             }
-
+            //only support android platform with gesture.
             std::atomic<bool> stop(false);
             std::thread threadLoop60Hz([&stop, &device] {
 
@@ -3251,7 +3265,8 @@ int main( int argc, char* argv[] ) try
                     auto now = std::chrono::steady_clock::now();
                     void* JVM;
                     // std::string password = "test";
-                    device->gestureEX()->start(JVM);
+                    std::string so_path = "";
+                    device->gestureEX()->start(JVM,so_path);
                     xv::Pose pos;
                     bool feGetposeat = device->slam()->getPoseAt(pos, now.time_since_epoch().count());
                     xv::GestureData gesture = device->gestureEX()->getGesture(pos, now.time_since_epoch().count());
@@ -3267,7 +3282,8 @@ int main( int argc, char* argv[] ) try
             if (device->orientationStream()) {
                 device->orientationStream()->unregisterCallback(imuId);
             }
-
+#if !defined __ANDROID__ || !defined __x86_64__            
+            //only support android platform with gaze.
             if (device->gaze())
             {
                 std::cout << "start StartCalibration" << std::endl;
@@ -3275,7 +3291,7 @@ int main( int argc, char* argv[] ) try
                 int result = calibration.StartCalibration(0);
                 std::cout << "StartCalibration result : " << result << std::endl;
             }
-
+#endif
             break;
         }
         case 77:

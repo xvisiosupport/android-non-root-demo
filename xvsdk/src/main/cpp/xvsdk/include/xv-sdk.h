@@ -543,6 +543,13 @@ public:
 class GazeStream : virtual public Stream<XV_ET_EYE_DATA_EX const &>{
 public:
 
+    /**
+     * @brief Set coe configuration file path.
+     *
+     * @param[in] config string value, end with "/"
+     */
+    virtual void setConfigPath(std::string config) = 0;
+
     virtual ~GazeStream() {}
 };
 
@@ -601,9 +608,11 @@ public:
      *
      * @param[in] jvm void* value
      *
+     * @param[in] so_path const std::string value
+     * 
      * @return Result of start method, true:succeed, false:failed.
      */
-    virtual bool start(void* jvm) = 0;
+    virtual bool start(void* jvm, const std::string so_path) = 0;
 
     /**
      * @brief Callback to get the gesture keypoints pose information based on slam position.
@@ -1362,7 +1371,121 @@ public:
 
         bool bOK = hidWriteAndRead({0x02, 0xbe, 0x9a, 0x06, 0x00, 0x00}, result);
      @endcode
+     *
+     * - Breathing lamp speed setting command: 
      * 
+     *      Header: 0x02, 0xbe, 0x9a
+     * 
+     *      Type: 0x08
+     * 
+     *      Data: 0x01-fast, 0x02-middle, 0x03-slow.
+     * 
+     *      Comment: Set breathing lamp speed.
+     * 
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xbe, 0x9a, 0x08, 0x01}, result);
+     @endcode
+     * 
+     * - Breathing lamp close command: 
+     * 
+     *      Header: 0x02, 0xbe, 0x9a
+     * 
+     *      Type: 0x06
+     * 
+     *      Data: 0x06-close.
+     * 
+     *      Comment: Close breathing lamp.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xbe, 0x9a, 0x02, 0x06}, result);
+     @endcode
+     *
+     * - Breathing lamp param reading command: 
+     * 
+     *      Header: 0x02, 0xbe, 0x9a
+     * 
+     *      Type: 0x09
+     * 
+     *      Comment: The data will be returned in result value, value1-breathing lamp mode, value2-color index, value3-breathing lamp speed. For detailed information, please refer to AW2026 chip register manual.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xbe, 0x9a, 0x09}, result);
+     @endcode
+     *
+     * - Save display panel 2/3D mode command: 
+     * 
+     *      Header: 0x02, 0xfe, 0x20
+     * 
+     *      Type: 0x16
+     * 
+     *      Data: 0x02-72hz, 0x03-90hz.
+     * 
+     *      Comment: The data will be saved in flash.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xfe, 0x20, 0x16, 0x02}, result);
+     @endcode
+     *
+     * - Read display panel 2/3D mode command: 
+     * 
+     *      Header: 0x02, 0xfe, 0x20
+     * 
+     *      Type: 0x17
+     * 
+     *      Comment: The data will be returned in result value, value1-Hz in flash, value2-Hz of real display.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xfe, 0x20, 0x17}, result);
+     @endcode
+     *
+     * - Set display panel brightness command: 
+     * 
+     *      Header: 0x02, 0xfe, 0x20
+     * 
+     *      Type: 0x02
+     * 
+     *      Data: Range: 0x01-0x20, 32 levels. 1 is darkest, 32 is brightest.
+     * 
+     *      Comment: The data will be saved in flash.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xfe, 0x20, 0x02, 0x01}, result);
+     @endcode
+     *
+     * - Read display panel brightness command: 
+     * 
+     *      Header: 0x02, 0xfe, 0x20
+     * 
+     *      Type: 0x02
+     * 
+     *      Comment: The data will be returned in result value, value1-display brightness.
+     * @code 
+     example:
+
+        std::vector<unsigned char> result;
+
+        bool bOK = hidWriteAndRead({0x02, 0xfe, 0x20, 0x02}, result);
+     @endcode
+     *
      * - Set auto display pane brightness command: 
      * 
      *      Header: 0x02, 0xfe, 0x20
@@ -1442,7 +1565,7 @@ public:
 
         bool bOK = hidWriteAndRead({0x02, 0xfe, 0x20, 0x10}, result);
      @endcode
-     * 
+     *
      */
     virtual bool hidWriteAndRead(const std::vector<unsigned char> &command, std::vector<unsigned char> &result) = 0;
     /**

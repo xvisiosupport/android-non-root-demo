@@ -149,12 +149,6 @@ LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/lib_et_TrackerSDK.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := YiXianHand
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxvisio_handtracking.so
-include $(PREBUILT_SHARED_LIBRARY)
-include $(CLEAR_VARS)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := xslam_hand
 LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_hand.so
 include $(PREBUILT_SHARED_LIBRARY)

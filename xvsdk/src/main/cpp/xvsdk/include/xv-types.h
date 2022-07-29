@@ -754,8 +754,6 @@ struct PdmCameraCalibration {
     PolynomialDistortionCameraModel intrinsics;
 };
 
-
-
 /**
  * @brief Class representing a 6dof pose at a timestamp with a linear model for prediction.
  *
@@ -944,8 +942,6 @@ struct SlamMap
 {
   std::vector<Vector3d> vertices;
 };
-
-
 
 /**
  * @brief Generic camera model

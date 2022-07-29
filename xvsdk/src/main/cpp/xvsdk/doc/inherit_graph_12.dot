@@ -1,0 +1,12 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="xv::details::TransformQuat\l_\< double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxv_1_1details_1_1TransformQuat__.html",tooltip=" "];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="xv::details::PoseQuat\l_\< F \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classxv_1_1details_1_1PoseQuat__.html",tooltip=" "];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="xv::TransformQuat",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structxv_1_1TransformQuat.html",tooltip="Represents a float typed transformation (or pose) with translation and quaternion for rotation."];
+}

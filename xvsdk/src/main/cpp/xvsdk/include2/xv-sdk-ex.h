@@ -12,6 +12,36 @@ namespace x {
 namespace xv {
 
 /**
+ * @brief Perspective Camera Model
+ */
+struct PerspectiveCameraModel {
+    /**
+     * @brief Image width (in pixel)
+     */
+    std::uint16_t w;
+    /**
+     * @brief Image height (in pixel)
+     */
+    std::uint16_t h;
+    /**
+     * @brief Focal length in width direction (in pixel)
+     */
+    double fx;
+    /**
+     * @brief Focal length in height direction (in pixel)
+     */
+    double fy;
+    /**
+     * @brief Optical axis intersection in width direction (in pixel)
+     */
+    double u0;
+    /**
+     * @brief Optical axis intersection in height direction (in pixel)
+     */
+    double v0;
+};
+
+/**
  * @brief Special Extended Unified Camera Model
  */
 struct SpecialUnifiedCameraModel
@@ -122,6 +152,38 @@ enum class StereoMode {
     NO_STREAMS, ///< No stream
 };
 
+
+/**
+ * @brief Data from IMU sensor for the XVisio handle.
+ */
+struct HandleImu {
+    std::array<unsigned char,32> raw;
+
+    //enum class Position {Head = 0, Left, Right};
+    //enum class DataType {Init = 0, Work};
+
+    //Position position; //!< 3-axis gyrometer values of left handle (in rad/s)
+    //DataType dataType; //!< 3-axis gyrometer values of left handle (in rad/s)
+    //int status;
+    //Vector3d lgyro; //!< 3-axis gyrometer values of left handle (in rad/s)
+    //Vector3d rgyro; //!< 3-axis gyrometer values of right handle (in rad/s)
+    //Vector3d laccel; //!< 3-axis accelerometer values of left handle (in m/s²)
+    //Vector3d raccel; //!< 3-axis accelerometer values of right handle (in m/s²)
+    //double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
+    //std::uint32_t edgeTimestampUs = std::numeric_limits<std::uint32_t>::min(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
+};
+
+
+/**
+ * @brief The class to give access to data provided by the IMU sensor.
+ */
+class HandleImuSensor : virtual public Stream<HandleImu const &> {
+public:
+
+    virtual ~HandleImuSensor(){}
+};
+
+
 /**
  * @brief For senior developer.
  */
@@ -136,6 +198,9 @@ public:
      */
     virtual std::shared_ptr<Slam> slam2() = 0;
 
+    virtual std::shared_ptr<HandleImuSensor> handleImuSensor() = 0;
+    virtual std::shared_ptr<FisheyeCameras> handleFisheyeCameras() = 0;
+
     /**
      * @brief Start use external IMU.
      */
@@ -147,7 +212,7 @@ public:
     /**
      * @brief Send external IMU to SDK.
      */
-    virtual void pushImu(Imu const& imu) = 0;
+    virtual void pushImu(Imu const& imu, bool with_bias_correction=false, bool with_timestamp_correction=false) = 0;
 
     enum class StereoInputType {ImageOnly, KeyPointsOnly, Both, None};
 
@@ -185,6 +250,19 @@ public:
      * @brief Get the third SLAM component to make edge and mixed slam work at sametime. Default is edge with fusion on host mode.
      */
     virtual std::shared_ptr<Slam> slam3() = 0;
+
+    /**
+     * @brief Return the customize flash array.
+     */
+    virtual std::string getCustomizeFlash48BytesArray1() = 0;
+
+    /**
+     * @brief Set the customize flash array.
+     */
+    virtual bool setCustomizeFlash48BytesArray1(std::string flashArray) = 0;
+
+    virtual void setDeviceOffsetStatus() = 0;
+
 
     virtual ~DeviceEx() { }
 };
@@ -250,7 +328,7 @@ public:
      * @param f name of the AprilTag family to use (support: "36h11" "25h9" "16h5" and "14h12")
      */
     explicit AprilTagDetector(xv::UnifiedCameraModel const& c, xv::Transform const& camerPose, std::string const& f="36h11", bool subpixelic=false);
-
+    
     /**
      * @brief Construct an AprilTag detector on single view
      * @param c camera calibration
@@ -476,7 +554,6 @@ public:
 
 };
 
-
 /**
  * @brief Compute the pixel shift to go from tracker pose p0 to tracker pose p1
  *
@@ -559,22 +636,31 @@ protected:
     bool m_enableSurface = false;
     bool m_enableSurfaceTexturing = false;
     bool m_enableSurfaceMultiResolutionMesh = false;
+    bool m_enableSurfaceMobileObjects = false;
     bool m_enableSurfacePlanes = false;
-    bool m_surfaceUseFisheyes = false; ///<! instead of Tof as depth source
+    bool m_surfaceUseFisheyes = false; //!< instead of Tof as depth source
+    bool m_surfaceUseFisheyeTexturing = true; //!< fisheye texturing instead of RGB texturing
     double m_surfaceMinVoxelSize = 0.1;
 
 public:
 
-   virtual void setEnableOnlineLoopClosure(bool enable) { m_enableOnlineLoopClosure = enable; }
-   virtual void setEnableSurface(bool enable) { m_enableSurface = enable; }
-   virtual void setEnableSurfaceTexturing(bool enable) { m_enableSurfaceTexturing = enable; }
-   virtual void setEnableSurfaceMultiResolutionMesh(bool enable) { m_enableSurfaceMultiResolutionMesh = enable;}
-   virtual void setEnableSurfacePlanes(bool enable) { m_enableSurfacePlanes = enable;}
-   virtual void setSurfaceUseFisheyes(bool use) { m_surfaceUseFisheyes = use;}
-   virtual void setSurfaceMinVoxelSize(double size) { m_surfaceMinVoxelSize = size; }
-   virtual int registerLocal3dPointsCallback(std::function<void (std::shared_ptr<const std::vector<std::array<double,3>>>)>) = 0;
-   virtual bool unregister3dPointsCallback(int callbackId) = 0;
-   virtual bool getLastVSlamPose(Pose &) { return false; }
+    virtual void setEnableOnlineLoopClosure(bool enable) { m_enableOnlineLoopClosure = enable; }
+    virtual void setEnableSurface(bool enable) { m_enableSurface = enable; }
+    virtual void setEnableSurfaceTexturing(bool enable) { m_enableSurfaceTexturing = enable; }
+    virtual void setEnableSurfaceMultiResolutionMesh(bool enable) { m_enableSurfaceMultiResolutionMesh = enable;}
+    virtual void setEnableSurfaceMobileObjects(bool enable) { m_enableSurfaceMobileObjects = enable;}
+    virtual void setEnableSurfacePlanes(bool enable) { m_enableSurfacePlanes = enable;}
+    virtual void setSurfaceUseFisheyes(bool use) { m_surfaceUseFisheyes = use;}
+    virtual void setSurfaceUseFisheyeTexturing(bool use) { m_surfaceUseFisheyeTexturing = use;}
+    virtual void setSurfaceMinVoxelSize(double size) { m_surfaceMinVoxelSize = size; }
+    virtual int registerLocal3dPointsCallback(std::function<void (std::shared_ptr<const std::vector<std::array<double,3>>>)>) = 0;
+    virtual bool unregister3dPointsCallback(int callbackId) = 0;
+    virtual bool getLastVSlamPose(Pose &) { return false; }
+
+    virtual bool startSurfaceReconstruction() { return false; }
+    virtual bool stopSurfaceReconstruction() { return false; }
+    virtual bool startPlaneDetection() { return false; }
+    virtual bool stopPlaneDetection() { return false; }
 
     /**
      * @brief Define a map of tags poses

@@ -7,7 +7,7 @@ var searchData=
   ['setbrightness_477',['setBrightness',['../classxv_1_1Camera.html#ad407932a579dccdb8b628ec5322fcd08',1,'xv::Camera']]],
   ['setbrightnesslevel_478',['setBrightnessLevel',['../classxv_1_1Display.html#a753826f8429f7e1bef34b49b31eb4b3f',1,'xv::Display']]],
   ['setconfidence_479',['setConfidence',['../classxv_1_1details_1_1Pose__.html#a3d41b269680d11d73385520d13743251',1,'xv::details::Pose_']]],
-  ['setconfigpath_480',['setConfigPath',['../classxv_1_1GestureStream.html#a3e775825ecfe1146c6c805bcddf2d332',1,'xv::GestureStream']]],
+  ['setconfigpath_480',['setConfigPath',['../classxv_1_1GazeStream.html#aa72c5434f4c4c08bd902fd114c3c23f0',1,'xv::GazeStream::setConfigPath()'],['../classxv_1_1GestureStream.html#a3e775825ecfe1146c6c805bcddf2d332',1,'xv::GestureStream::setConfigPath()']]],
   ['setdistancemode_481',['setDistanceMode',['../classxv_1_1TofCamera.html#a0a4185549610e20e2d3bb42f1661ae9e',1,'xv::TofCamera']]],
   ['setedgetimestampus_482',['setEdgeTimestampUs',['../classxv_1_1details_1_1PoseQuat__.html#a3159bc3a8ffae3a9b8070f845f768a8b',1,'xv::details::PoseQuat_::setEdgeTimestampUs()'],['../classxv_1_1details_1_1PoseRot__.html#ac44836fb460bfe0d41d9e3c72f93f6cd',1,'xv::details::PoseRot_::setEdgeTimestampUs()']]],
   ['setexposure_483',['setExposure',['../classxv_1_1Camera.html#a1655083a221bf1a0c0c6563d203c3ca4',1,'xv::Camera::setExposure()'],['../classxv_1_1EyetrackingCamera.html#a53b38d589064f47a5c43b1d6439ff028',1,'xv::EyetrackingCamera::setExposure()']]],
@@ -28,6 +28,6 @@ var searchData=
   ['slam_498',['slam',['../classxv_1_1Device.html#a82af73bff459756055b16f4919621472',1,'xv::Device']]],
   ['sleep_499',['sleep',['../classxv_1_1Device.html#a25497e5000355b1095255ec67380276f',1,'xv::Device']]],
   ['speaker_500',['speaker',['../classxv_1_1Device.html#a185129bf949372d26661c403de90b5e2',1,'xv::Device']]],
-  ['start_501',['start',['../classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf',1,'xv::Stream::start()'],['../classxv_1_1Slam.html#a4ca0c757bc941310ce5d6f84b272c96a',1,'xv::Slam::start() override=0'],['../classxv_1_1Slam.html#a06bb6d9ba07b12cf9cd5f5e159c65fe8',1,'xv::Slam::start(Mode mode)=0'],['../classxv_1_1GestureStreamEX.html#aa925267a7ed1250d9a149129c91dfa45',1,'xv::GestureStreamEX::start()']]],
+  ['start_501',['start',['../classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf',1,'xv::Stream::start()'],['../classxv_1_1Slam.html#a4ca0c757bc941310ce5d6f84b272c96a',1,'xv::Slam::start() override=0'],['../classxv_1_1Slam.html#a06bb6d9ba07b12cf9cd5f5e159c65fe8',1,'xv::Slam::start(Mode mode)=0'],['../classxv_1_1GestureStreamEX.html#a145cfaf0e1b20156558c3d6b579c01d9',1,'xv::GestureStreamEX::start()']]],
   ['stop_502',['stop',['../classxv_1_1Stream.html#aa9f3bf10782ee511900ca3eb94039d20',1,'xv::Stream']]]
 ];

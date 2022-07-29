@@ -88,9 +88,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class=
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa925267a7ed1250d9a149129c91dfa45"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStreamEX.html#aa925267a7ed1250d9a149129c91dfa45">start</a> (void *jvm)=0</td></tr>
-<tr class="memdesc:aa925267a7ed1250d9a149129c91dfa45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start extend gesture stream.  <a href="classxv_1_1GestureStreamEX.html#aa925267a7ed1250d9a149129c91dfa45">More...</a><br /></td></tr>
-<tr class="separator:aa925267a7ed1250d9a149129c91dfa45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a145cfaf0e1b20156558c3d6b579c01d9"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStreamEX.html#a145cfaf0e1b20156558c3d6b579c01d9">start</a> (void *jvm, const std::string so_path)=0</td></tr>
+<tr class="memdesc:a145cfaf0e1b20156558c3d6b579c01d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start extend gesture stream.  <a href="classxv_1_1GestureStreamEX.html#a145cfaf0e1b20156558c3d6b579c01d9">More...</a><br /></td></tr>
+<tr class="separator:a145cfaf0e1b20156558c3d6b579c01d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1642515a7fbb066947c4e16cde3616e"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStreamEX.html#ad1642515a7fbb066947c4e16cde3616e">registerPosCallback</a> (std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1Pose.html">xv::Pose</a> &gt;&gt;)&gt; callback)=0</td></tr>
 <tr class="memdesc:ad1642515a7fbb066947c4e16cde3616e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to get the gesture keypoints pose information based on slam position.  <a href="classxv_1_1GestureStreamEX.html#ad1642515a7fbb066947c4e16cde3616e">More...</a><br /></td></tr>
 <tr class="separator:ad1642515a7fbb066947c4e16cde3616e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -245,8 +245,8 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 </div>
 </div>
-<a id="aa925267a7ed1250d9a149129c91dfa45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa925267a7ed1250d9a149129c91dfa45">&#9670;&nbsp;</a></span>start()</h2>
+<a id="a145cfaf0e1b20156558c3d6b579c01d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a145cfaf0e1b20156558c3d6b579c01d9">&#9670;&nbsp;</a></span>start()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -258,8 +258,18 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
           <td class="memname">virtual bool xv::GestureStreamEX::start </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>jvm</em></td><td>)</td>
+          <td class="paramname"><em>jvm</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const std::string&#160;</td>
+          <td class="paramname"><em>so_path</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -273,6 +283,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">jvm</td><td>void* value</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">so_path</td><td>const std::string value</td></tr>
   </table>
   </dd>
 </dl>

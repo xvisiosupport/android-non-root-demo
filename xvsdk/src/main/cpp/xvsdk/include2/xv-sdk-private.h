@@ -147,6 +147,11 @@ public:
     virtual int registerSurfaceCallback(std::function<void (std::shared_ptr<const ex::Surfaces>)> );
     virtual bool unregisterSurfaceCallback(int );
 
+    virtual bool startSurfaceReconstruction();
+    virtual bool stopSurfaceReconstruction();
+    virtual bool startPlaneDetection();
+    virtual bool stopPlaneDetection();
+
     virtual bool addTags(std::vector<TagInfo> const& v);
     virtual bool onTagUpdate(std::function<void(std::string const& tagId, xv::Transform const& pose, double const& tagSize)>);
 
@@ -279,7 +284,7 @@ public:
     */
    std::shared_ptr<SlamBase> slamVisionOnly();
 
-   bool initSlamHostOnly(std::shared_ptr<DeviceImpl> d, bool enableOnlineLoopClosure=false, bool enableSurface=false, bool enableSurfaceTexturing=false, bool surfaceMultiResolutionMesh=false, bool enableSurfacePlanes=false, bool surfaceUseFisheyes=false);
+   bool initSlamHostOnly(std::shared_ptr<DeviceImpl> d, bool enableOnlineLoopClosure=false, bool enableSurface=false, bool enableSurfaceTexturing=false, bool surfaceMultiResolutionMesh=false, bool surfaceMobileObjects=false, bool enableSurfacePlanes=false, bool surfaceUseFisheyes=false, bool surfaceUseFisheyeTexturing=false);
 
    /**
     * @brief Provide a SLAM only on host (only use IMU and fisheye images from the device).
@@ -315,10 +320,40 @@ public:
     /**
      * @brief This unwarp function is optimize for full image unwarp and need to call #initBilinearInterpolate before
      * @param inputImage the image to unwarp
-     * @return the unwarp image
+     * @return the unwarped image
      */
     GrayScaleImage unwarp(const GrayScaleImage &inputImage) const;
+    /**
+     * @brief This unwarp function is optimize for full image unwarp and need to call #initBilinearInterpolate before
+     * @param inputImage the image to unwarp
+     * @return the unwarped image
+     */
+    RgbImage unwarp(const RgbImage &inputImage) const;
 };
+
+/**
+ * @brief Create an undistor image warp from camera calibrations and image size.
+ *
+ * The new camera model corresponding to the warp is camera perspective with u0,v0,fx,fy from original parameters
+ *
+ * @param cameraCalibrations : calibration of the camera that gives the input image of the warp
+ * @param w : width of the input images
+ * @param h : height of the input image
+ * @return The image warp that undistor the images
+ */
+std::pair<ImageWarpMesh,PerspectiveCameraModel> createImageWarpMeshWithPdcm(std::vector<Calibration> cameraCalibrations, uint16_t w, uint16_t h, double zoomFactor=1.);
+
+/**
+ * @brief Create an undistor image warp from camera calibrations and image size.
+ *
+ * The new camera model corresponding to the warp is camera perspective with u0,v0,fx,fy from original parameters
+ *
+ * @param cameraCalibrations : calibration of the camera that gives the input image of the warp
+ * @param w : width of the input images
+ * @param h : height of the input image
+ * @return The image warp that undistor the images
+ */
+std::pair<ImageWarpMesh,PerspectiveCameraModel> createImageWarpMeshWithUcm(std::vector<Calibration> cameraCalibrations, uint16_t w, uint16_t h, double zoomFactor=1.);
 
 /**
  * @brief A class to compute the rectification or undistortion mesh to help undistor stereo images.
@@ -342,8 +377,11 @@ public:
     double focal() const;
     double baseline() const;
 
-    xv::Transform const& leftVirtualPose();
-    xv::Transform const& rightVirtualPose();
+    xv::Transform const& leftVirtualPose() const;
+    xv::Transform const& rightVirtualPose() const;
+
+    ImageWarpMesh const& leftWarp() const;
+    ImageWarpMesh const& rightWarp() const;
 
 private:
     double m_baseline = -1e9;
