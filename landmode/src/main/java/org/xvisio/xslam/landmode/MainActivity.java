@@ -227,12 +227,12 @@ public class MainActivity extends AppCompatActivity {
 
     private final PoseListener mPoseListener = new PoseListener() {
         @Override
-        public void onPose(final double x, final double y, final double z, final double roll, final double pitch, final double yaw) {
+        public void onPose(final double x, final double y, final double z, final double pitch, final double yaw, final double roll) {
             mMainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     PoseDisplay pose_display = findViewById(R.id.poseDisplay);
-                    pose_display.setValue(x, y, z, roll, pitch, yaw);
+                    pose_display.setValue(x, y, z, pitch, yaw, roll);
                 }
             });
 

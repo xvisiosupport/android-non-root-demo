@@ -10,7 +10,7 @@ public class PoseDisplay extends LinearLayout {
         super(context, attrs);
     }
 
-    public void setValue(double x, double y, double z, double roll, double pitch, double yaw) {
+    public void setValue(double x, double y, double z, double pitch, double yaw, double roll) {
         TextView x_view = findViewById(R.id.xValue);
         x_view.setText(String.format("%.3f", x));
         TextView y_view = findViewById(R.id.yValue);
@@ -18,11 +18,11 @@ public class PoseDisplay extends LinearLayout {
         TextView z_view = findViewById(R.id.zValue);
         z_view.setText(String.format("%.3f", z));
 
-        TextView roll_view = findViewById(R.id.rollValue);
-        roll_view.setText(String.format("%.3f", roll));
         TextView pitch_view = findViewById(R.id.pitchValue);
         pitch_view.setText(String.format("%.3f", pitch));
         TextView yaw_view = findViewById(R.id.yawValue);
         yaw_view.setText(String.format("%.3f", yaw));
+        TextView roll_view = findViewById(R.id.rollValue);
+        roll_view.setText(String.format("%.3f", roll));
     }
 }

@@ -244,9 +244,9 @@ public class XCamera extends XVisioClass {
 
     private static native void stopSgbmStream();
 
-    public static void poseCallback(double x, double y, double z, double roll, double pitch, double yaw) {
+    public static void poseCallback(double x, double y, double z, double pitch, double yaw, double roll) {
         if (mPoseListener != null) {
-            mPoseListener.onPose(x, y, z, roll, pitch, yaw);
+            mPoseListener.onPose(x, y, z, pitch, yaw, roll);
         }
     }
 
