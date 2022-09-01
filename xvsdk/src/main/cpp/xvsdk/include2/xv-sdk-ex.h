@@ -157,7 +157,7 @@ enum class StereoMode {
  * @brief Data from IMU sensor for the XVisio handle.
  */
 struct HandleImu {
-    std::array<unsigned char,32> raw;
+    std::array<unsigned char,64> raw;
 
     //enum class Position {Head = 0, Left, Right};
     //enum class DataType {Init = 0, Work};
@@ -479,7 +479,7 @@ public:
     virtual bool unregisterKeyPoints4Callback(int callbackId) = 0;
 
     virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
-
+    virtual const std::vector<CalibrationEx>& defaultcalibration() = 0;
     virtual xv::FisheyeImages lastImages() = 0;
 
     /**

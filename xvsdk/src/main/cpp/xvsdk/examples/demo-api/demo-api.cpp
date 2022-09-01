@@ -1802,11 +1802,11 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
+
             // start mix slam
             device->slam()->start(xv::Slam::Mode::Mixed);
 
@@ -1904,15 +1904,15 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif      
+
             auto slam = device->slam();            
             auto slamEx = dynamic_cast<xv::SlamEx*>(slam.get());            
-            slamEx->setEnableSurface(true);            
-            slamEx->setEnableSurfacePlanes(true);            // Get plane data
+            //slamEx->setEnableSurface(true);            
+            //slamEx->setEnableSurfacePlanes(true);            // Get plane data
             // Get plane data
             device->tofCamera()->start();
             // !!! Must call registerTofPlanesCallback before slam()->start
@@ -2015,11 +2015,11 @@ int main( int argc, char* argv[] ) try
             // stop mix slam
             std::cout << "stop slam" << std::endl;
             device->slam()->stop();
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
+
             //std::this_thread::sleep_for( std::chrono::seconds(1) );
 
             // start mix slam
@@ -2044,16 +2044,17 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
-            // start mix slam
-            device->slam()->start(xv::Slam::Mode::Mixed);
 
             // Get plane data
+            // !!! Must call registerStereoPlanesCallback before slam()->start
             planeId = device->slam()->registerStereoPlanesCallback(planeCallback);
+
+            // start mix slam
+            device->slam()->start(xv::Slam::Mode::Mixed);
 
             // get mixed 6dof
             startGetPose(device->slam());
@@ -2078,11 +2079,11 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
             if (device->fisheyeCameras()) {
                 iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
             }
-#endif
+
             // switch to EdgeFusionOnHost mode
             device->slam()->start(xv::Slam::Mode::EdgeFusionOnHost);
 
@@ -2095,11 +2096,11 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
             if (device->fisheyeCameras()) {
                 iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
             }
-#endif
+
             // start EdgeFusionOnHost slam
             device->slam()->start(xv::Slam::Mode::EdgeFusionOnHost);
 
@@ -2150,11 +2151,11 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
+
             // switch to Mixed mode
             device->slam()->start(xv::Slam::Mode::Mixed);
 
@@ -2986,11 +2987,11 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-#ifdef _WIN32
+
 			if (device->fisheyeCameras()) {
 				iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
 			}
-#endif
+
             device->fisheyeCameras()->start();
 
             device->slam()->start(xv::Slam::Mode::Mixed);
@@ -3029,7 +3030,9 @@ int main( int argc, char* argv[] ) try
             if(device->orientationStream()){
                 device->orientationStream()->unregisterCallback( imuId );
             }
-
+            if (device->fisheyeCameras()) {
+                iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
+            }
             std::cout << "call tofcamera start" << std::endl;
             bool useTof = device->tofCamera()->start();
 

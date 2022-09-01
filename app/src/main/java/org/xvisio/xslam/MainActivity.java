@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button mBtRgbSolution;
     ImageView mIvStream;
+    ConstraintLayout mClTof;
     TextView mTvSolution, mTvFps;
     private StreamHandler mMainHandler;
 
@@ -104,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mIvStream = findViewById(R.id.rgbView);
+        mClTof = findViewById(R.id.cl_tof);
         mTvSolution = findViewById(R.id.tv_rgb_solution);
         mTvFps = findViewById(R.id.tv_rgb_fps);
         RadioGroup cameraRadio = findViewById(R.id.radio_camera);
@@ -184,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
             mCamera.setTofIrCallback(mTofIrListener);
             mCamera.setSgbmCallback(mSgbmListener);
             mCamera.setPoseCallback(mPoseListener);
-            mCamera.init(mAppContext);
         }
         mCamera.setRgbSolution(rgbSolution);
     }
@@ -255,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
         public static final int TOF = 2;
         public static final int STEREO = 3;
         public static final int SGBM = 4;
+        public static final int TOF_IR = 5;
 
         public StreamHandler(Looper looper) {
             super(looper);
@@ -266,22 +269,37 @@ public class MainActivity extends AppCompatActivity {
             switch (msg.what) {
                 case RGB:
                     mBtRgbSolution.setVisibility(View.VISIBLE);
+                    mIvStream.setVisibility(View.VISIBLE);
+                    mClTof.setVisibility(View.GONE);
                     onRgbCallback((StreamData) msg.obj);
                     break;
 
                 case TOF:
                     mBtRgbSolution.setVisibility(View.GONE);
+                    mIvStream.setVisibility(View.GONE);
+                    mClTof.setVisibility(View.VISIBLE);
                     onTofCallback((StreamData) msg.obj);
                     break;
 
                 case STEREO:
                     mBtRgbSolution.setVisibility(View.GONE);
+                    mIvStream.setVisibility(View.VISIBLE);
+                    mClTof.setVisibility(View.GONE);
                     onStereoCallback((StreamData) msg.obj);
                     break;
 
                 case SGBM:
                     mBtRgbSolution.setVisibility(View.GONE);
+                    mIvStream.setVisibility(View.VISIBLE);
+                    mClTof.setVisibility(View.GONE);
                     onSgbmCallback((StreamData) msg.obj);
+                    break;
+
+                case TOF_IR:
+                    mBtRgbSolution.setVisibility(View.GONE);
+                    mIvStream.setVisibility(View.GONE);
+                    mClTof.setVisibility(View.VISIBLE);
+                    onTofIrCallback((StreamData) msg.obj);
                     break;
 
                 default:
@@ -414,9 +432,10 @@ public class MainActivity extends AppCompatActivity {
     private void onTofCallback(StreamData data) {
         mTvSolution.setText(data.getWidth() + "X" + data.getHeight());
         mTvFps.setText("");
+        ImageView iv = mClTof.findViewById(R.id.tofView);
         Bitmap bitmap = Bitmap.createBitmap(data.getWidth(), data.getHeight(), Bitmap.Config.ARGB_8888);
         bitmap.setPixels(data.getPixels(), 0, data.getWidth(), 0, 0, data.getWidth(), data.getHeight());
-        mIvStream.setImageBitmap(bitmap);
+        iv.setImageBitmap(bitmap);
     }
 
     private final TofListener mTofListener = new TofListener() {
@@ -426,10 +445,19 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void onTofIrCallback(StreamData data) {
+        // mTvSolution.setText(data.getWidth() + "X" + data.getHeight());
+        mTvFps.setText("");
+        ImageView iv = mClTof.findViewById(R.id.tofView2);
+        Bitmap bitmap = Bitmap.createBitmap(data.getWidth(), data.getHeight(), Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(data.getPixels(), 0, data.getWidth(), 0, 0, data.getWidth(), data.getHeight());
+        iv.setImageBitmap(bitmap);
+    }
+
     private final TofIrListener mTofIrListener = new TofIrListener() {
         @Override
         public void onTofIr(int width, int height, int[] pixels) {
-
+            sendStreamMessage(StreamHandler.TOF_IR, new StreamData(width, height, pixels));
         }
     };
 }

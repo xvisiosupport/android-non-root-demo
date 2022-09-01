@@ -160,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
             mCamera.setTofCallback(mTofListener);
             mCamera.setTofIrCallback(mTofIrListener);
             mCamera.setPoseCallback(mPoseListener);
-            mCamera.init(mAppContext);
         }
         mCamera.setRgbSolution(rgbSolution);
     }

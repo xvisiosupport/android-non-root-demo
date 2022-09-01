@@ -843,10 +843,10 @@ int main( int argc, char* argv[] ) try
         img.width = rgb.width;
         img.height = rgb.height;
         img.data = data;
-        xv::AprilTagDetector rgbDetector("36h11");
+        //xv::AprilTagDetector rgbDetector("36h11");
         auto t0 = std::chrono::steady_clock::now();
         s_mtx_rgb_tags.lock();
-        s_rgb_tags = rgbDetector.detect(img);
+        //s_rgb_tags = rgbDetector.detect(img);
         s_rgb_gray = img;
         s_mtx_rgb_tags.unlock();
         auto t1 = std::chrono::steady_clock::now();

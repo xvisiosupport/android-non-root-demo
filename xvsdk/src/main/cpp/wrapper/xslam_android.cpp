@@ -348,10 +348,11 @@ void onTofCallback(xv::DepthImage const &im) {
 
         double dFactor = 255.0 / (double) (dmax - dmin);
         // LOG_DEBUG("onTofCallback IR dmin=%d, dmax=%d, dFactor1=%f", dmin, dmax, dFactor);
+        double gamma = 2.8;
         for (unsigned int i = 0; i < tmp->height * tmp->width; i++) {
             unsigned short d = tmp_d[i];
-            int dv = (int) ((d - dmin) * dFactor);
-            // dv = (int)(255.0 * pow(d / dwidth, 1.0 / gamma));
+            // int dv = (int) ((d - dmin) * dFactor);
+            int dv = (int) (255.0 * pow((1.0 * d) / (dmax - dmin), 1 / gamma));
             unsigned char pixel = (unsigned char) dv;
             rgbVectors[i] = RgbaStruct{pixel, pixel, pixel, 255};
         }
@@ -397,12 +398,30 @@ void stopTofStream() {
     device->tofCamera()->stop();
 }
 
+bool setPmdTofIRFunction()
+{
+    bool  ret = false;
+    std::vector<unsigned char> result(63);
+    bool bOK = device->hidWriteAndRead({0x02,0x10,0xf5,0x02,0x01}, result);
+    if(bOK)
+    {
+        std::cout << "Enable IR successfully" << std::endl;
+        ret = true;
+    }
+    else
+    {
+        std::cout << "Enable IR failed" << std::endl;
+        ret = false;
+    }
+    return ret;
+}
+
 void startTofStream() {
     LOG_DEBUG("startTofStream");
     if (!device || !device->tofCamera()) {
         return;
     }
-
+    setPmdTofIRFunction();
     tofId = device->tofCamera()->registerCallback(onTofCallback);
     device->tofCamera()->setSonyTofSetting(xv::TofCamera::SonyTofLibMode::LABELIZE_SF,
                                            xv::TofCamera::Resolution::VGA,

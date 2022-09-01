@@ -1,6 +1,0 @@
-# ninja log v5
-0	2	0	clean	e2f6da04117cdca4
-0	2	0	clean	e2f6da04117cdca4
-0	997	1657845934	wrapper/CMakeFiles/xslam_wrapper.dir/yuv_to_rgb.cpp.o	ea0ef0ff08da1c35
-0	1273	1657845934	wrapper/CMakeFiles/xslam_wrapper.dir/xslam_android.cpp.o	1197575af3156a61
-1273	1306	1657845934	/home/blues_zheng/文档/android-non-root-demo/xvsdk/build/intermediates/cxx/Release/203v5m67/obj/arm64-v8a/libxslam_wrapper.so	8676f9f128251855
