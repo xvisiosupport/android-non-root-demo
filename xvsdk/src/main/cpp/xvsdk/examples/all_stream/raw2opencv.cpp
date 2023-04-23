@@ -54,10 +54,10 @@ cv::Mat raw_to_opencv_tof_ir(xv::GrayScaleImage const& tof_ir) {
     auto tmp_d = reinterpret_cast<short const*>(tof_ir.data.get());
     for (unsigned int i=0; i< tof_ir.height*tof_ir.width; i++) {
         short d = tmp_d[i];
-        unsigned int u = static_cast<unsigned int>( std::max(0.0f, std::min(255.0f,  d * 255.0f / dmax )));
-        if( u < 15 )
-            u = 0;
-        const auto &cc = colors.at(u);
+//        unsigned int u = static_cast<unsigned int>( std::max(0.0f, std::min(255.0f,  d * 255.0f / dmax )));
+//        if( u < 15 )
+//            u = 0;
+        const auto &cc = colors.at(d);
         out.at<cv::Vec3b>( i/tof_ir.width, i%tof_ir.width ) = cv::Vec3b(cc.at(2), cc.at(1),cc.at(0) );
         /*short u = tof->ir.get()[i];
                 cvtof.at<cv::Vec3b>( i/tof->width, i%tof->width ) = cv::Vec3s(u*255/2191,u*255/2191,u*255/2191);*/
@@ -67,9 +67,13 @@ cv::Mat raw_to_opencv_tof_ir(xv::GrayScaleImage const& tof_ir) {
 
 cv::Mat raw_to_opencv_tof_ir_grey(xv::GrayScaleImage const& tof_ir) {
     cv::Mat out;
-    out = cv::Mat::zeros(tof_ir.height, tof_ir.width, CV_8UC1);
-    std::memcpy(out.data, (short*)tof_ir.data.get(), static_cast<size_t>(out.rows*out.cols));
-    cv::cvtColor(out, out, cv::COLOR_GRAY2BGR);
+    out = cv::Mat::zeros(tof_ir.height, tof_ir.width, CV_8UC3);
+    float dmax = 2191/4;
+    auto tmp_d = reinterpret_cast<short const*>(tof_ir.data.get());
+    for (unsigned int i=0; i< tof_ir.height*tof_ir.width; i++) {
+        short d = tmp_d[i];
+        out.at<cv::Vec3b>( i/tof_ir.width, i%tof_ir.width ) = cv::Vec3b(d, d, d);
+    }
     return out;
 }
 

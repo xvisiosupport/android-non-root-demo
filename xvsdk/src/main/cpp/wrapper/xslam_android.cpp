@@ -218,9 +218,9 @@ void onSlamCallback(xv::Pose const &pose) {
                                      static_cast<double>(pose.x()),
                                      static_cast<double>(pose.y()),
                                      static_cast<double>(pose.z()),
-                                     static_cast<double>(pitchYawRoll[0]),
-                                     static_cast<double>(pitchYawRoll[1]),
-                                     static_cast<double>(pitchYawRoll[2]));
+                                     static_cast<double>(pitchYawRoll[0]*180/M_PI),
+                                     static_cast<double>(pitchYawRoll[1]*180/M_PI),
+                                     static_cast<double>(pitchYawRoll[2]*180/M_PI));
     }
 }
 
@@ -455,7 +455,7 @@ void onStrereoCallback(xv::FisheyeImages const &stereo) {
         jint *body = jniEnv->GetIntArrayElements(data, 0);
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
-                auto v = d[(w - i - 1) + (h - j - 1) * w];
+                auto v = d[i + j * w];
                 body[i + j * w] =
                         0xFF000000 + (v << 16 & 0xFF0000) + (v << 8 & 0xFF00) + (v & 0xFF);
             }

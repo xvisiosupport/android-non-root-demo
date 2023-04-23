@@ -23,9 +23,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import com.hjq.permissions.OnPermissionCallback;
-import com.hjq.permissions.Permission;
-import com.hjq.permissions.XXPermissions;
+//import com.hjq.permissions.OnPermissionCallback;
+//import com.hjq.permissions.Permission;
+//import com.hjq.permissions.XXPermissions;
 
 import org.xvisio.xvsdk.DeviceListener;
 import org.xvisio.xvsdk.ImuListener;
@@ -113,39 +113,42 @@ public class MainActivity extends AppCompatActivity {
         cameraSelect = cameraRadio.getCheckedRadioButtonId();
         cameraRadio.setOnCheckedChangeListener(mCemeraSelectListener);
 
+        String[] permissions = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+        requestPermissions(permissions, 101);
+
         //uvc permission https://github.com/saki4510t/UVCPermissionTest
-        XXPermissions.with(this)
-                // 不适配 Android 11 可以这样写
-                .permission(Permission.Group.STORAGE)
-                // 适配 Android 11 需要这样写，这里无需再写 Permission.Group.STORAGE
-                // .permission(Permission.MANAGE_EXTERNAL_STORAGE)
-                .permission(Permission.CAMERA)
-                .request(new OnPermissionCallback() {
-
-                    @Override
-                    public void onGranted(List<String> permissions, boolean all) {
-                        if (all) {
-                            mPermissionsGranted = true;
-                            init();
-                            Log.i("test", "startRecord 0=");
-
-//							Toast.makeText(mActivityContext,"获取存储权限成功", (int)1000).show();
-                        }
-                    }
-
-                    @Override
-                    public void onDenied(List<String> permissions, boolean never) {
-                        if (never) {
-                            Toast.makeText(mAppContext, "被永久拒绝授权，请手动授予存储权限", 1000).show();
-                            // 如果是被永久拒绝就跳转到应用权限系统设置页面
-                            XXPermissions.startPermissionActivity(mAppContext, permissions);
-                        } else {
-                            Toast.makeText(mAppContext, "获取存储权限失败", 1000).show();
-                        }
-                    }
-                });
-
-        mPermissionsGranted = true;
+//        XXPermissions.with(this)
+//                // 不适配 Android 11 可以这样写
+//                .permission(Permission.Group.STORAGE)
+//                // 适配 Android 11 需要这样写，这里无需再写 Permission.Group.STORAGE
+//                // .permission(Permission.MANAGE_EXTERNAL_STORAGE)
+//                .permission(Permission.CAMERA)
+//                .request(new OnPermissionCallback() {
+//
+//                    @Override
+//                    public void onGranted(List<String> permissions, boolean all) {
+//                        if (all) {
+//                            mPermissionsGranted = true;
+//                            init();
+//                            Log.i("test", "startRecord 0=");
+//
+////							Toast.makeText(mActivityContext,"获取存储权限成功", (int)1000).show();
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onDenied(List<String> permissions, boolean never) {
+//                        if (never) {
+//                            Toast.makeText(mAppContext, "被永久拒绝授权，请手动授予存储权限", 1000).show();
+//                            // 如果是被永久拒绝就跳转到应用权限系统设置页面
+//                            XXPermissions.startPermissionActivity(mAppContext, permissions);
+//                        } else {
+//                            Toast.makeText(mAppContext, "获取存储权限失败", 1000).show();
+//                        }
+//                    }
+//                });
+//
+//        mPermissionsGranted = true;
     }
 
     @Override
@@ -155,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         mPermissionsGranted = true;
+        init();
     }
 
     @Override

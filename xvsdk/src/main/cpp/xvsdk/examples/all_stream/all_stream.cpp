@@ -45,7 +45,7 @@ static struct xv::sgbm_config global_config = {
 #include "xv-sdk-private.h"
 #endif
 
-#ifdef USE_OPENCV
+#ifdef USE_OPENCV_
 #include <opencv2/opencv.hpp>
 
 int s_x=-1,s_y=-1;
@@ -234,6 +234,7 @@ std::pair<cv::Mat,cv::Mat> raw_to_opencv(std::shared_ptr<const xv::EyetrackingIm
 
 
 std::shared_ptr<const xv::ColorImage> s_rgb = nullptr;
+std::shared_ptr<const xv::ColorImage> s_rgb2 = nullptr;
 std::shared_ptr<const xv::DepthImage> s_tof = nullptr;
 std::shared_ptr<const xv::GrayScaleImage> s_ir = nullptr;
 std::shared_ptr<const xv::FisheyeImages> s_stereo = nullptr;
@@ -252,6 +253,7 @@ std::vector<xv::TagDetection> s_rgb_tags;
 #endif
 
 std::mutex s_mtx_rgb;
+std::mutex s_mtx_rgb2;
 std::mutex s_mtx_tof;
 std::mutex s_mtx_depthColor;
 std::mutex s_mtx_ir;
@@ -269,6 +271,10 @@ void display() {
     if (enableDevMap["rgb"]) {
         cv::namedWindow("RGB");
         cv::moveWindow("RGB", 20, 462);
+    }
+    if (enableDevMap["rgb2"]) {
+        cv::namedWindow("RGB2");
+        cv::moveWindow("RGB2", 20, 962);
     }
     if (enableDevMap["tof"]) {
         cv::namedWindow("TOF");
@@ -288,6 +294,7 @@ void display() {
 
     while( !s_stop ){
         std::shared_ptr<const xv::ColorImage> rgb = nullptr;
+        std::shared_ptr<const xv::ColorImage> rgb2 = nullptr;
         std::shared_ptr<const xv::DepthImage> tof = nullptr;
         std::shared_ptr<const xv::GrayScaleImage> ir = nullptr;
         std::shared_ptr<const xv::FisheyeImages> stereo = nullptr;
@@ -353,6 +360,17 @@ void display() {
                 cv::imshow("RGB", img);
             }
         }
+
+        if (enableDevMap["rgb2"]) {
+            s_mtx_rgb2.lock();
+            rgb2 = s_rgb2;
+            s_mtx_rgb2.unlock();
+            if (rgb2 && rgb2->width>0 && rgb2->height>0) {
+                cv::Mat img = raw_to_opencv(rgb2);
+                cv::imshow("RGB2", img);
+            }
+        }
+
         if (enableDevMap["tof"]) {
             s_mtx_tof.lock();
             tof = s_tof;
@@ -362,13 +380,16 @@ void display() {
                 if (img.rows>0 && img.cols>0)
                     cv::imshow("TOF", img);
             }
-            s_mtx_depthColor.lock();
-            auto depthColor = s_depthColor;
-            s_mtx_depthColor.unlock();
-            if (depthColor) {
-                cv::Mat img = raw_to_opencv(depthColor);
-                if (img.rows>0 && img.cols>0)
-                    cv::imshow("RGBD (depth)", img);
+            if(enableDevMap["RGBD"])
+            {
+                s_mtx_depthColor.lock();
+                auto depthColor = s_depthColor;
+                s_mtx_depthColor.unlock();
+                if (depthColor) {
+                    cv::Mat img = raw_to_opencv(depthColor);
+                    if (img.rows>0 && img.cols>0)
+                        cv::imshow("RGBD (depth)", img);
+                }
             }
             s_mtx_ir.lock();
             ir = s_ir;
@@ -481,6 +502,7 @@ int main( int argc, char* argv[] ) try
         }
     }
     enableDevMap["rgb"] = true;
+    enableDevMap["rgb2"] = true;
     enableDevMap["tof"]= true;
     enableDevMap["fisheye"] = true;
     enableDevMap["sgbm"] = true;
@@ -496,6 +518,7 @@ int main( int argc, char* argv[] ) try
     enableDevMap["tof_point_cloud"] = false;
     enableDevMap["log"]=true;
     enableDevMap["ir"]=true;
+    enableDevMap["RGBD"]=true;
     if (argc == 3)
     {
         std::string enableDevStr(argv[2]);
@@ -539,6 +562,11 @@ int main( int argc, char* argv[] ) try
     enableDevMap["slam"] &= device->slam() != nullptr;
     enableDevMap["imu"] &= device->imuSensor() != nullptr;
     enableDevMap["eyetracking"] &= device->eyetracking() != nullptr;
+    if(enableDevMap["tof"]){
+        enableDevMap["RGBD"] &= device->tofCamera()->checkColorDepthImageSupport();
+    }else {
+        enableDevMap["RGBD"] = false;
+    }
 
     if(enableDevMap["dewarp"])
     {
@@ -572,6 +600,29 @@ int main( int argc, char* argv[] ) try
     {
         std::cout << "No RGB camera.\n";
     }
+
+    if (enableDevMap["rgb2"])
+    {
+        device->colorCamera()->registerCam2Callback( [](xv::ColorImage const & rgb){
+            static FpsCount fc;
+            fc.tic();
+            static int k = 0;
+            if(k++%25==0){
+                if(enableDevMap["log"])
+                {
+                    std::cout << "rgb 2     " << timeShowStr(rgb.edgeTimestampUs, rgb.hostTimestamp)
+                            << rgb.width << "x" << rgb.height << "@" << std::round(fc.fps()) << "fps" << std::endl;
+                }
+            }
+        });
+        device->colorCamera()->setCamsResolution(xv::ColorCamera::Resolution::RGB_1920x1080);
+        device->colorCamera()->startCameras();
+    }
+    else
+    {
+        std::cout << "No RGB camera 2.\n";
+    }
+
 
     if (enableDevMap["tof"]) {
 
@@ -643,27 +694,28 @@ int main( int argc, char* argv[] ) try
         xv::TofCamera::Manufacturer manufacturer = device->tofCamera()->getManufacturer();
         if(enableDevMap["ir"] && manufacturer == xv::TofCamera::Manufacturer::Pmd)
         {
-            std::vector<unsigned char> result(63);
-            bool bOK = device->hidWriteAndRead({0x02,0x10,0xf5,0x02,0x01}, result);
+            bool bOK = device->tofCamera()->enableTofIr(true);
             if(bOK)
                 std::cout << "Enable IR successfully" << std::endl;
             else
                 std::cout << "Enable IR failed" << std::endl;
         } 
         device->tofCamera()->start();
-
-        device->tofCamera()->registerColorDepthImageCallback([](const xv::DepthColorImage& depthColor){
-            static FpsCount fc;
-            fc.tic();
-            static int k = 0;
-            if(k++%15==0){
-                if(enableDevMap["log"])
-                {
-                    std::cout << "RGBD     " << timeShowStr(depthColor.hostTimestamp)
-                            << depthColor.width << "x" << depthColor.height << "@" << std::round(fc.fps()) << "fps" << std::endl;
+        if(enableDevMap["RGBD"])
+        {
+            device->tofCamera()->registerColorDepthImageCallback([](const xv::DepthColorImage& depthColor){
+                static FpsCount fc;
+                fc.tic();
+                static int k = 0;
+                if(k++%15==0){
+                    if(enableDevMap["log"])
+                    {
+                        std::cout << "RGBD     " << timeShowStr(depthColor.hostTimestamp)
+                                << depthColor.width << "x" << depthColor.height << "@" << std::round(fc.fps()) << "fps" << std::endl;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     if (enableDevMap["imu"]) {
@@ -827,7 +879,7 @@ int main( int argc, char* argv[] ) try
 
     std::cout << " == Initialized ==" << std::endl;
 
-#ifdef USE_OPENCV
+#ifdef USE_OPENCV_
     //Display in thread to not slow down callbacks
 
     if (device->colorCamera()) {
@@ -843,10 +895,10 @@ int main( int argc, char* argv[] ) try
         img.width = rgb.width;
         img.height = rgb.height;
         img.data = data;
-        //xv::AprilTagDetector rgbDetector("36h11");
+        xv::AprilTagDetector rgbDetector("36h11");
         auto t0 = std::chrono::steady_clock::now();
         s_mtx_rgb_tags.lock();
-        //s_rgb_tags = rgbDetector.detect(img);
+        s_rgb_tags = rgbDetector.detect(img);
         s_rgb_gray = img;
         s_mtx_rgb_tags.unlock();
         auto t1 = std::chrono::steady_clock::now();
@@ -863,6 +915,15 @@ int main( int argc, char* argv[] ) try
         s_rgb = std::make_shared<xv::ColorImage>(im);
         s_mtx_rgb.unlock();
         });
+    }
+    if(enableDevMap["rgb2"]){
+        if (device->colorCamera()) {
+            device->colorCamera()->registerCam2Callback( [&device](xv::ColorImage const & im){
+            s_mtx_rgb2.lock();
+            s_rgb2 = std::make_shared<xv::ColorImage>(im);
+            s_mtx_rgb2.unlock();
+            });
+        }
     }
     if (enableDevMap["fisheye"]) {
         device->fisheyeCameras()->registerCallback( [&device](xv::FisheyeImages const & stereo){
@@ -915,12 +976,14 @@ int main( int argc, char* argv[] ) try
         });
 
         //std::dynamic_pointer_cast<xv::TofCameraEx>(device->tofCamera())->registerColorDepthImageCallback([](const xv::DepthColorImage& depthColor){
-        device->tofCamera()->registerColorDepthImageCallback([](const xv::DepthColorImage& depthColor){
-            s_mtx_depthColor.lock();
-            s_depthColor = std::make_shared<xv::DepthColorImage>(depthColor);
-            s_mtx_depthColor.unlock();
-        });
-
+        if(enableDevMap["RGBD"])
+        {
+            device->tofCamera()->registerColorDepthImageCallback([](const xv::DepthColorImage& depthColor){
+                s_mtx_depthColor.lock();
+                s_depthColor = std::make_shared<xv::DepthColorImage>(depthColor);
+                s_mtx_depthColor.unlock();
+            });
+        }
     }
     if(enableDevMap["sgbm"])
     {
@@ -1067,7 +1130,7 @@ int main( int argc, char* argv[] ) try
         device->slam()->stop();
 
 
-#ifdef USE_OPENCV
+#ifdef USE_OPENCV_
     s_stop = true;
     if (t.joinable()) {
         t.join();

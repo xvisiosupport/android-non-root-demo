@@ -5,6 +5,7 @@ import android.content.res.ColorStateList;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 public class ImuDisplay extends LinearLayout {
     public ImuDisplay(Context context, AttributeSet attrs) {
@@ -14,6 +15,8 @@ public class ImuDisplay extends LinearLayout {
     public void setValue(double value) {
         ProgressBar nb = findViewById(R.id.negativeBar);
         ProgressBar pb = findViewById(R.id.positiveBar);
+        TextView tv = findViewById(R.id.tv_value);
+        tv.setText(String.format("%.4f", value));
         if (value < 0) {
             nb.setProgress((int) (-value * 100));
             pb.setProgress(0);

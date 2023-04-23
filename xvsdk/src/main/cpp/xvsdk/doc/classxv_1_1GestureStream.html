@@ -100,15 +100,12 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>UnregisterDyn
 <tr class="memitem:a90b1b1768e66376365bf762486d9e0c0"><td class="memItemLeft" align="right" valign="top"><a id="a90b1b1768e66376365bf762486d9e0c0"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterKeypointsCallback</b> (int callbackId)=0</td></tr>
 <tr class="separator:a90b1b1768e66376365bf762486d9e0c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a604646638afbdde3f08d68a5e930edae"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStream.html#a604646638afbdde3f08d68a5e930edae">registerSlamKeypointsCallback</a> (std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1keypoint.html">keypoint</a> &gt;&gt;)&gt; callback)=0</td></tr>
-<tr class="memdesc:a604646638afbdde3f08d68a5e930edae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to get the keypoints 21Dof information based on slam position.  <a href="classxv_1_1GestureStream.html#a604646638afbdde3f08d68a5e930edae">More...</a><br /></td></tr>
-<tr class="separator:a604646638afbdde3f08d68a5e930edae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a967e5b570692739562a3fcf60bc83309"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStream.html#a967e5b570692739562a3fcf60bc83309">registerSlamKeypointsCallback</a> (std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1Pose.html">Pose</a> &gt;&gt;)&gt; callback)=0</td></tr>
+<tr class="memdesc:a967e5b570692739562a3fcf60bc83309"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to get the keypoints 21Dof information based on slam position.  <a href="classxv_1_1GestureStream.html#a967e5b570692739562a3fcf60bc83309">More...</a><br /></td></tr>
+<tr class="separator:a967e5b570692739562a3fcf60bc83309"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af36c1fec8874bc80f65ce30309d18f7d"><td class="memItemLeft" align="right" valign="top"><a id="af36c1fec8874bc80f65ce30309d18f7d"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterSlamKeypointsCallback</b> (int callbackId)=0</td></tr>
 <tr class="separator:af36c1fec8874bc80f65ce30309d18f7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e775825ecfe1146c6c805bcddf2d332"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStream.html#a3e775825ecfe1146c6c805bcddf2d332">setConfigPath</a> (std::string config)=0</td></tr>
-<tr class="memdesc:a3e775825ecfe1146c6c805bcddf2d332"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set MNN configuration file path.  <a href="classxv_1_1GestureStream.html#a3e775825ecfe1146c6c805bcddf2d332">More...</a><br /></td></tr>
-<tr class="separator:a3e775825ecfe1146c6c805bcddf2d332"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -188,8 +185,8 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 </div>
 </div>
-<a id="a604646638afbdde3f08d68a5e930edae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a604646638afbdde3f08d68a5e930edae">&#9670;&nbsp;</a></span>registerSlamKeypointsCallback()</h2>
+<a id="a967e5b570692739562a3fcf60bc83309"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a967e5b570692739562a3fcf60bc83309">&#9670;&nbsp;</a></span>registerSlamKeypointsCallback()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -200,7 +197,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
         <tr>
           <td class="memname">virtual int xv::GestureStream::registerSlamKeypointsCallback </td>
           <td>(</td>
-          <td class="paramtype">std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1keypoint.html">keypoint</a> &gt;&gt;)&gt;&#160;</td>
+          <td class="paramtype">std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1Pose.html">Pose</a> &gt;&gt;)&gt;&#160;</td>
           <td class="paramname"><em>callback</em></td><td>)</td>
           <td></td>
         </tr>
@@ -218,42 +215,8 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 </div>
 </div>
-<a id="a3e775825ecfe1146c6c805bcddf2d332"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e775825ecfe1146c6c805bcddf2d332">&#9670;&nbsp;</a></span>setConfigPath()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void xv::GestureStream::setConfigPath </td>
-          <td>(</td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>config</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Set MNN configuration file path. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">config</td><td>string value, end with \ </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -165,6 +165,10 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:aac81ce3204418b9014cb4a56fbe6995e"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#aac81ce3204418b9014cb4a56fbe6995e">setLibWorkMode</a> (SonyTofLibMode mode)=0</td></tr>
 <tr class="memdesc:aac81ce3204418b9014cb4a56fbe6995e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set lib mode.  <a href="classxv_1_1TofCamera.html#aac81ce3204418b9014cb4a56fbe6995e">More...</a><br /></td></tr>
 <tr class="separator:aac81ce3204418b9014cb4a56fbe6995e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b4a47d546a4608ee6533c83ae082cad"><td class="memItemLeft" align="right" valign="top"><a id="a8b4a47d546a4608ee6533c83ae082cad"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#a8b4a47d546a4608ee6533c83ae082cad">enableTofIr</a> (bool enable)=0</td></tr>
+<tr class="memdesc:a8b4a47d546a4608ee6533c83ae082cad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable tof ir. <br /></td></tr>
+<tr class="separator:a8b4a47d546a4608ee6533c83ae082cad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ceb666493359a97d847786dfa9a24c0"><td class="memItemLeft" align="right" valign="top"><a id="a5ceb666493359a97d847786dfa9a24c0"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#a5ceb666493359a97d847786dfa9a24c0">setMode</a> (int mode)=0</td></tr>
 <tr class="memdesc:a5ceb666493359a97d847786dfa9a24c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set work mode. <br /></td></tr>
@@ -173,10 +177,17 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#af21305938efbbcb738745986940d4a64">setSonyTofSetting</a> (SonyTofLibMode mode, Resolution resolution, Framerate frameRate)=0</td></tr>
 <tr class="memdesc:af21305938efbbcb738745986940d4a64"><td class="mdescLeft">&#160;</td><td class="mdescRight">SonyTof Settings. <br /></td></tr>
 <tr class="separator:af21305938efbbcb738745986940d4a64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af220e53132cdcfe54fd2e5e8891a5e6e"><td class="memItemLeft" align="right" valign="top"><a id="af220e53132cdcfe54fd2e5e8891a5e6e"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setTofIrGamma</b> (double gamma)=0</td></tr>
+<tr class="separator:af220e53132cdcfe54fd2e5e8891a5e6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af6da76eeb5958bd0d1f88cb013bd554d"><td class="memItemLeft" align="right" valign="top"><a id="af6da76eeb5958bd0d1f88cb013bd554d"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#af6da76eeb5958bd0d1f88cb013bd554d">setFilterFile</a> (std::string filePath)=0</td></tr>
 <tr class="memdesc:af6da76eeb5958bd0d1f88cb013bd554d"><td class="mdescLeft">&#160;</td><td class="mdescRight">set SonyTof filter file <br /></td></tr>
 <tr class="separator:af6da76eeb5958bd0d1f88cb013bd554d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="memItemLeft" align="right" valign="top"><a id="ac2901423b7c9c9ed9d6aac76bcd488c8"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#ac2901423b7c9c9ed9d6aac76bcd488c8">checkColorDepthImageSupport</a> ()=0</td></tr>
+<tr class="memdesc:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">check if support color depth image <br /></td></tr>
+<tr class="separator:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -508,7 +519,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setFramerate<
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

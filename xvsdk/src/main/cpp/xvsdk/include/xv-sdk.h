@@ -215,7 +215,22 @@ public:
         RGB_3840x2160 = 5,
     };
 
+    enum class Mode {
+        AF,
+        MF,
+        Unknown
+    };
+
     virtual bool setResolution( const Resolution &resolution ) = 0;
+    virtual bool isSupportAFRGB() = 0;
+    virtual bool setRGBMode(const Mode &mode) = 0;
+    virtual bool setRGBFocalDistance(unsigned char distance) = 0;
+    virtual bool startCameras(int camIndex = 1) = 0;
+    virtual bool stopCameras(int camIndex = 1) = 0;
+    virtual bool setCamsResolution(const xv::ColorCamera::Resolution & resolution, int camIndex = 1) = 0;
+    virtual bool setCamsFramerate(float framerate, int camIndex = 1) = 0;
+    virtual int registerCam2Callback(std::function<void (ColorImage const &)> c ) = 0;
+    virtual bool unregisterCam2Callback( int callbackID ) = 0;
 
     virtual ~ColorCamera(){}
 };
@@ -293,6 +308,11 @@ public:
     virtual bool setLibWorkMode(SonyTofLibMode mode) = 0;
 
     /**
+     * @brief Enable tof ir.
+     */
+    virtual bool enableTofIr(bool enable) = 0;
+
+    /**
      * @brief Set work mode.
      */
     virtual bool setMode(int mode) = 0;
@@ -302,10 +322,17 @@ public:
     */
     virtual bool setSonyTofSetting(SonyTofLibMode mode, Resolution resolution, Framerate frameRate) = 0;
 
+    virtual void setTofIrGamma(double gamma) = 0;
+
     /**
      * @brief set SonyTof filter file
     */
     virtual void setFilterFile(std::string filePath) = 0;
+
+    /**
+     * @brief check if support color depth image
+    */
+    virtual bool checkColorDepthImageSupport() = 0;
 
     virtual ~TofCamera() {}
 };
@@ -343,6 +370,18 @@ public:
      * @return return true if well reset, else if something went wrong.
      */
     virtual bool reset() = 0;
+
+    /**
+     * @brief Pause the 6dof tracker (SLAM)
+     * @return return true if well pause, else if something went wrong.
+     */
+    virtual bool pause() = 0;
+
+    /**
+     * @brief Resume the 6dof tracker (SLAM)
+     * @return return true if well resume, else if something went wrong.
+     */
+    virtual bool resume() = 0;
 
     /**
      * @brief Get the current 6dof pose of the device.
@@ -397,7 +436,13 @@ public:
     /**
      * @brief Callback to get the detected planes using ToF camera and SLAM
      *
-     * The vector contains planes with current planes and with plane ID as key. Between mutiple calls new planes can be added, previous planes updated or merged. If a plane disappear from the vector, it means it was merged with other.
+     * The vector contains the current planes with plane ID as key.
+     * Between mutiple calls new planes can be added, previous planes updated or merged.
+     * If a plane disappears from the vector, it means it was merged with another.
+     *
+     * If the planes IDs start with "SRP", it means the update comes from the surface reconstruction mapping.
+     * If the planes IDs start with "SRIP", it means the update comes from the instantaneous plane detection algorithm.
+     * Otherwise the planes comes from the legacy plane detection algorithm.
      *
      * @return Id of the callback (used to unregister the callback).
      */
@@ -584,15 +629,8 @@ public:
      *
      * @return Id of the callback (used to unregister the callback).
      */
-    virtual int registerSlamKeypointsCallback(std::function<void (std::shared_ptr<const std::vector<keypoint>>)> callback) = 0;
+    virtual int registerSlamKeypointsCallback(std::function<void (std::shared_ptr<const std::vector<Pose>>)> callback) = 0;
     virtual bool unregisterSlamKeypointsCallback(int callbackId) = 0;
-
-    /**
-     * @brief Set MNN configuration file path.
-     *
-     * @param[in] config string value, end with \
-     */
-    virtual void setConfigPath(std::string config) = 0;
 
     virtual ~GestureStream() {}
 };
@@ -647,6 +685,23 @@ public:
     virtual std::vector<xv::Pose> GetGesturePose(xv::Pose pose, double timestamp) = 0;
 
     virtual ~GestureStreamEX() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the GPS data.
+ */
+class GPSStream : virtual public Stream<std::vector<unsigned char> const &>{
+public:
+    virtual ~GPSStream() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the gaze data.
+ */
+class GPSDistanceStream : virtual public Stream<GPSDistanceData const &>{
+public:
+
+    virtual ~GPSDistanceStream() {}
 };
 
 /**
@@ -1114,6 +1169,16 @@ public:
     virtual std::shared_ptr<GestureStream> gesture() = 0;
 
     virtual std::shared_ptr<GestureStreamEX> gestureEX() = 0;
+
+    /**
+     * @brief Get the GPS data of the device.
+     */
+    virtual std::shared_ptr<GPSStream> gpsModule() = 0;
+
+    /**
+     * @brief Get the GPS distance data of the device.
+     */
+    virtual std::shared_ptr<GPSDistanceStream> gpsDistanceModule() = 0;
 
     /**
      * @brief Get the MIC component of the device.
@@ -1610,7 +1675,7 @@ Version version();
  * @param desc : Load device according to feature in desc(json string). SDK can choose device feature from desc accoring SN or hardware version. The desc also contains default values of slam algorithm(old SDK is INI file).
  * @return A map with key corresponding to device ID and the value is a #Device.
  */
-std::map<std::string,std::shared_ptr<Device>> getDevices(double timeOut = 0., const std::string& desc = "", bool* stopWaiting = nullptr);
+std::map<std::string,std::shared_ptr<Device>> getDevices(double timeOut = 0., const std::string& desc = "", bool* stopWaiting = nullptr, xv::SlamStartMode slamStartMode = xv::SlamStartMode::Normal, xv::DeviceSupport deviceSupport = xv::DeviceSupport ::ONLYUSB);
 
 /**
  * @brief Change the log level.
@@ -1648,7 +1713,7 @@ std::shared_ptr<Device> getDevice(int fd);
  * @param desc : load device according to feature in desc. SDK can choose device feature from desc accoring SN or version.
  * @return A #Device.
  */
-std::shared_ptr<Device> getDevice(int fd, std::string const& desc);
+std::shared_ptr<Device> getDevice(int fd, std::string const& desc, xv::SlamStartMode slamStartMode = xv::SlamStartMode::Normal);
 
 /**
  * @brief Tell sdk device has disconnected. Only for Android.

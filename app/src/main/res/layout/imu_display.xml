@@ -25,4 +25,14 @@
         android:max="200"
         android:progressTint="#f00" />
 
+    <TextView
+        android:id="@+id/tv_value"
+        android:text="0"
+        android:textSize="14sp"
+        android:paddingLeft="10dp"
+        android:layout_gravity="center"
+        android:textColor="@android:color/holo_red_dark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
 </org.xvisio.xslam.ImuDisplay>

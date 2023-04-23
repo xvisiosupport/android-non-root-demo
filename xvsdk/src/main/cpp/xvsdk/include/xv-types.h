@@ -7,6 +7,10 @@
 #include <string>
 #include <memory>
 
+#if defined(__ANDROID__) && !defined(__x86_64__)
+#define __XV_DRIVER_ONLY__
+#endif
+
 namespace xv {
 
 /**
@@ -20,6 +24,19 @@ enum class LogLevel {
         critical,
         off
 };
+
+enum class SlamStartMode {
+    Normal,
+    VisionOnly,
+    VisionWithGYRO
+};
+
+enum DeviceSupport {
+    ONLYUSB,
+    ONLYDRIVER,
+    USBANDDRIVER
+};
+
 
 /**
  * @brief Plug event types.
@@ -77,6 +94,22 @@ struct DeviceSetting
         std::int16_t val16;
         std::int32_t val32;
 	}args;
+};
+
+struct IspAecSetting
+{
+    int32_t maxIsoGainValue;
+    int32_t minIsoGainValue;
+    int32_t maxExposureTimeUs;
+    int32_t minExposureTimeUs;
+    uint8_t targetMeanPixelValue;
+    int32_t ratioIso;
+    int32_t cpt_aec_no_modify_range;
+    float exposureTime_control_porprotion_value;
+    float exposureTime_control_integral_value;
+    float isoGain_control_porprotion_value;
+    float isoGain_control_integral_value;
+    uint32_t ISP_AEC_MODE;
 };
 
 #pragma pack()
@@ -1361,6 +1394,28 @@ struct DateTime {
   int Y, M, D;//!<Year, month, and day
   int h, m;//!<Hour and minutes
   int s;//!<Seconds
+};
+
+/**
+* @struct 
+* GPS distance data struct
+*/
+struct GPSDistanceData {
+  int           distance;//!<Distance
+  int           signal;//!<Signal Intensity
+  unsigned char sum;//!<Check sum
+};
+
+struct Triple
+{
+  Vector2<unsigned short> p2d;
+  size_t i3d;
+  Triple(Vector2<unsigned short> const& p2, size_t i3): p2d(p2), i3d(i3) {}
+};
+struct PointMatches
+{
+    FisheyeImages fisheyeImages;
+    std::vector<std::vector<Triple>> matches;
 };
 
 }

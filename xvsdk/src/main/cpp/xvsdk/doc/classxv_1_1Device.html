@@ -135,6 +135,14 @@ virtual std::shared_ptr&lt; <a class="el" href="classxv_1_1GestureStream.html">G
 <tr class="memitem:a72186651e0f22a138db0159ee2038c28"><td class="memItemLeft" align="right" valign="top"><a id="a72186651e0f22a138db0159ee2038c28"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classxv_1_1GestureStreamEX.html">GestureStreamEX</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>gestureEX</b> ()=0</td></tr>
 <tr class="separator:a72186651e0f22a138db0159ee2038c28"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add600adb6f33a09a822e8319ebfd32b2"><td class="memItemLeft" align="right" valign="top"><a id="add600adb6f33a09a822e8319ebfd32b2"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classxv_1_1GPSStream.html">GPSStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Device.html#add600adb6f33a09a822e8319ebfd32b2">gpsModule</a> ()=0</td></tr>
+<tr class="memdesc:add600adb6f33a09a822e8319ebfd32b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the GPS data of the device. <br /></td></tr>
+<tr class="separator:add600adb6f33a09a822e8319ebfd32b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91b5b07196dfe541d76ef360bcb1be2a"><td class="memItemLeft" align="right" valign="top"><a id="a91b5b07196dfe541d76ef360bcb1be2a"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classxv_1_1GPSDistanceStream.html">GPSDistanceStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Device.html#a91b5b07196dfe541d76ef360bcb1be2a">gpsDistanceModule</a> ()=0</td></tr>
+<tr class="memdesc:a91b5b07196dfe541d76ef360bcb1be2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the GPS distance data of the device. <br /></td></tr>
+<tr class="separator:a91b5b07196dfe541d76ef360bcb1be2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a72c57216f9e446b63ec413da24ae57"><td class="memItemLeft" align="right" valign="top"><a id="a4a72c57216f9e446b63ec413da24ae57"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classxv_1_1MicStream.html">MicStream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Device.html#a4a72c57216f9e446b63ec413da24ae57">mic</a> ()=0</td></tr>
 <tr class="memdesc:a4a72c57216f9e446b63ec413da24ae57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the MIC component of the device. <br /></td></tr>
@@ -189,7 +197,7 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class=
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class to get tracking results and raw outputs with a connected device. </p>
-<p>This class is the main entry point of the API, it gives access to the device and algorithms. See <a class="el" href="group__xv__functions.html#ga9d51997c35d0ab6d4cc2708d6b6b9ab0" title="Retrieve all the detected XVisio devices. If no device is found after the timeout is reached,...">xv::getDevices()</a> to have an instance corresponding to a device.</p>
+<p>This class is the main entry point of the API, it gives access to the device and algorithms. See <a class="el" href="group__xv__functions.html#ga7a7e38fd3ed94aab311fbc1ce5bd7693" title="Retrieve all the detected XVisio devices. If no device is found after the timeout is reached,...">xv::getDevices()</a> to have an instance corresponding to a device.</p>
 <p>A device can have multiple components, accessible with member functions :</p><ul>
 <li><a class="el" href="classxv_1_1Device.html#a82af73bff459756055b16f4919621472" title="Get the SLAM component.">xv::Device::slam()</a> : 6dof tracker doing the SLAM algorithm on host based on informations coming from device (stereo camera, IMU sensor, ..)</li>
 <li><a class="el" href="classxv_1_1Device.html#aab6d916babd2f4f78d5f12c00847394f" title="Get the IMU sensor of the device.">xv::Device::imuSensor()</a> : sensor with at least 3-axis accelerometer and 3-axis gyrometer</li>
@@ -526,7 +534,7 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class=
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <div class="ttc" id="aclassxv_1_1Device_html_abc1a937d9d2036a15bbdd88d1843a754"><div class="ttname"><a href="classxv_1_1Device.html#abc1a937d9d2036a15bbdd88d1843a754">xv::Device::hidWriteAndRead</a></div><div class="ttdeci">virtual bool hidWriteAndRead(const std::vector&lt; unsigned char &gt; &amp;command, std::vector&lt; unsigned char &gt; &amp;result)=0</div><div class="ttdoc">Write HID control command and read result. HID command list:</div></div>

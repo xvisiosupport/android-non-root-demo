@@ -74,9 +74,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gaef8a3bcde35be6aa07323e4f329f2d98"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classxv_1_1Device.html">Device</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__android__functions.html#gaef8a3bcde35be6aa07323e4f329f2d98">xv::getDevice</a> (int fd)</td></tr>
 <tr class="memdesc:gaef8a3bcde35be6aa07323e4f329f2d98"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve #Device by given descriptor. Only for Android.  <a href="group__xv__android__functions.html#gaef8a3bcde35be6aa07323e4f329f2d98">More...</a><br /></td></tr>
 <tr class="separator:gaef8a3bcde35be6aa07323e4f329f2d98"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5677c746c6ad376e8533ec10666b210a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classxv_1_1Device.html">Device</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__android__functions.html#ga5677c746c6ad376e8533ec10666b210a">xv::getDevice</a> (int fd, std::string const &amp;desc)</td></tr>
-<tr class="memdesc:ga5677c746c6ad376e8533ec10666b210a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve #Device by given descriptor. Only for Android.  <a href="group__xv__android__functions.html#ga5677c746c6ad376e8533ec10666b210a">More...</a><br /></td></tr>
-<tr class="separator:ga5677c746c6ad376e8533ec10666b210a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0e86e5c001357aa902a349fdff0bf502"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classxv_1_1Device.html">Device</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__android__functions.html#ga0e86e5c001357aa902a349fdff0bf502">xv::getDevice</a> (int fd, std::string const &amp;desc, xv::SlamStartMode slamStartMode=xv::SlamStartMode::Normal)</td></tr>
+<tr class="memdesc:ga0e86e5c001357aa902a349fdff0bf502"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve #Device by given descriptor. Only for Android.  <a href="group__xv__android__functions.html#ga0e86e5c001357aa902a349fdff0bf502">More...</a><br /></td></tr>
+<tr class="separator:ga0e86e5c001357aa902a349fdff0bf502"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga584b3ceae982b9d582f3ce4fcbd26f8d"><td class="memItemLeft" align="right" valign="top"><a id="ga584b3ceae982b9d582f3ce4fcbd26f8d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__android__functions.html#ga584b3ceae982b9d582f3ce4fcbd26f8d">xv::detachDevice</a> (int fd)</td></tr>
 <tr class="memdesc:ga584b3ceae982b9d582f3ce4fcbd26f8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tell sdk device has disconnected. Only for Android. <br /></td></tr>
@@ -119,8 +119,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
 
 </div>
 </div>
-<a id="ga5677c746c6ad376e8533ec10666b210a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga5677c746c6ad376e8533ec10666b210a">&#9670;&nbsp;</a></span>getDevice() <span class="overload">[2/2]</span></h2>
+<a id="ga0e86e5c001357aa902a349fdff0bf502"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga0e86e5c001357aa902a349fdff0bf502">&#9670;&nbsp;</a></span>getDevice() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -135,7 +135,13 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">std::string const &amp;&#160;</td>
-          <td class="paramname"><em>desc</em>&#160;</td>
+          <td class="paramname"><em>desc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">xv::SlamStartMode&#160;</td>
+          <td class="paramname"><em>slamStartMode</em> = <code>xv::SlamStartMode::Normal</code>&#160;</td>
         </tr>
         <tr>
           <td></td>

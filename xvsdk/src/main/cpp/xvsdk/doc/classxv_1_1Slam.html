@@ -106,6 +106,12 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:afe502b3d0fd50405a7528659124bce75"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#afe502b3d0fd50405a7528659124bce75">reset</a> ()=0</td></tr>
 <tr class="memdesc:afe502b3d0fd50405a7528659124bce75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the 6dof tracker (SLAM)  <a href="classxv_1_1Slam.html#afe502b3d0fd50405a7528659124bce75">More...</a><br /></td></tr>
 <tr class="separator:afe502b3d0fd50405a7528659124bce75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b6debe93b9e3e39e2dcc4693a441c37"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#a6b6debe93b9e3e39e2dcc4693a441c37">pause</a> ()=0</td></tr>
+<tr class="memdesc:a6b6debe93b9e3e39e2dcc4693a441c37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pause the 6dof tracker (SLAM)  <a href="classxv_1_1Slam.html#a6b6debe93b9e3e39e2dcc4693a441c37">More...</a><br /></td></tr>
+<tr class="separator:a6b6debe93b9e3e39e2dcc4693a441c37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a242c60ca68febee6346e2e22908aaaec"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#a242c60ca68febee6346e2e22908aaaec">resume</a> ()=0</td></tr>
+<tr class="memdesc:a242c60ca68febee6346e2e22908aaaec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resume the 6dof tracker (SLAM)  <a href="classxv_1_1Slam.html#a242c60ca68febee6346e2e22908aaaec">More...</a><br /></td></tr>
+<tr class="separator:a242c60ca68febee6346e2e22908aaaec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67812e6824e6815735ee7552c3b298c0"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#a67812e6824e6815735ee7552c3b298c0">getPose</a> (<a class="el" href="structxv_1_1Pose.html">Pose</a> &amp;pose, double prediction=0.)=0</td></tr>
 <tr class="memdesc:a67812e6824e6815735ee7552c3b298c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current 6dof pose of the device.  <a href="classxv_1_1Slam.html#a67812e6824e6815735ee7552c3b298c0">More...</a><br /></td></tr>
 <tr class="separator:a67812e6824e6815735ee7552c3b298c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -348,6 +354,34 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 </div>
 </div>
+<a id="a6b6debe93b9e3e39e2dcc4693a441c37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b6debe93b9e3e39e2dcc4693a441c37">&#9670;&nbsp;</a></span>pause()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool xv::Slam::pause </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Pause the 6dof tracker (SLAM) </p>
+<dl class="section return"><dt>Returns</dt><dd>return true if well pause, else if something went wrong. </dd></dl>
+
+</div>
+</div>
 <a id="a982802d27246c039d89771836d54472e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a982802d27246c039d89771836d54472e">&#9670;&nbsp;</a></span>poseScaleCalibration()</h2>
 
@@ -496,7 +530,8 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </div><div class="memdoc">
 
 <p>Callback to get the detected planes using ToF camera and SLAM. </p>
-<p>The vector contains planes with current planes and with plane ID as key. Between mutiple calls new planes can be added, previous planes updated or merged. If a plane disappear from the vector, it means it was merged with other.</p>
+<p>The vector contains the current planes with plane ID as key. Between mutiple calls new planes can be added, previous planes updated or merged. If a plane disappears from the vector, it means it was merged with another.</p>
+<p>If the planes IDs start with "SRP", it means the update comes from the surface reconstruction mapping. If the planes IDs start with "SRIP", it means the update comes from the instantaneous plane detection algorithm. Otherwise the planes comes from the legacy plane detection algorithm.</p>
 <dl class="section return"><dt>Returns</dt><dd>Id of the callback (used to unregister the callback). </dd></dl>
 
 </div>
@@ -555,6 +590,34 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 <p>Reset the 6dof tracker (SLAM) </p>
 <dl class="section return"><dt>Returns</dt><dd>return true if well reset, else if something went wrong. </dd></dl>
+
+</div>
+</div>
+<a id="a242c60ca68febee6346e2e22908aaaec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a242c60ca68febee6346e2e22908aaaec">&#9670;&nbsp;</a></span>resume()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool xv::Slam::resume </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Resume the 6dof tracker (SLAM) </p>
+<dl class="section return"><dt>Returns</dt><dd>return true if well resume, else if something went wrong. </dd></dl>
 
 </div>
 </div>
@@ -640,7 +703,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

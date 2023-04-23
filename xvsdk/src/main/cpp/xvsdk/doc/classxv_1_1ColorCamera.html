@@ -93,6 +93,11 @@ Public Types</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:acb488c507a1956ac0016953a60740cd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfe515aacbae1b7769fe3434e24075e8"><td class="memItemLeft" align="right" valign="top"><a id="abfe515aacbae1b7769fe3434e24075e8"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>Mode</b> { <b>AF</b>, 
+<b>MF</b>, 
+<b>Unknown</b>
+ }</td></tr>
+<tr class="separator:abfe515aacbae1b7769fe3434e24075e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2229ca44476d0c343116f45bb832ed30"><td class="memItemLeft" align="right" valign="top"><a id="a2229ca44476d0c343116f45bb832ed30"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class="el" href="structxv_1_1ColorImage.html">ColorImage</a> const &amp;</td></tr>
 <tr class="separator:a2229ca44476d0c343116f45bb832ed30"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,6 +107,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab8217cbfe651cc4b13f9376860529ea8"><td class="memItemLeft" align="right" valign="top"><a id="ab8217cbfe651cc4b13f9376860529ea8"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setResolution</b> (const <a class="el" href="classxv_1_1ColorCamera.html#acb488c507a1956ac0016953a60740cd4">Resolution</a> &amp;resolution)=0</td></tr>
 <tr class="separator:ab8217cbfe651cc4b13f9376860529ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a364d00f3f804db6a01f691780d3b55fe"><td class="memItemLeft" align="right" valign="top"><a id="a364d00f3f804db6a01f691780d3b55fe"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSupportAFRGB</b> ()=0</td></tr>
+<tr class="separator:a364d00f3f804db6a01f691780d3b55fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02790edb33f2a57937272164077bce0b"><td class="memItemLeft" align="right" valign="top"><a id="a02790edb33f2a57937272164077bce0b"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setRGBMode</b> (const Mode &amp;mode)=0</td></tr>
+<tr class="separator:a02790edb33f2a57937272164077bce0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09506f3bd0b5675b7af465e03fa38a0b"><td class="memItemLeft" align="right" valign="top"><a id="a09506f3bd0b5675b7af465e03fa38a0b"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setRGBFocalDistance</b> (unsigned char distance)=0</td></tr>
+<tr class="separator:a09506f3bd0b5675b7af465e03fa38a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d6f464e0ead2c127cf2f5822c084541"><td class="memItemLeft" align="right" valign="top"><a id="a0d6f464e0ead2c127cf2f5822c084541"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>startCameras</b> (int camIndex=1)=0</td></tr>
+<tr class="separator:a0d6f464e0ead2c127cf2f5822c084541"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab319444a3d454559f44c1026fffc1f0b"><td class="memItemLeft" align="right" valign="top"><a id="ab319444a3d454559f44c1026fffc1f0b"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>stopCameras</b> (int camIndex=1)=0</td></tr>
+<tr class="separator:ab319444a3d454559f44c1026fffc1f0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3a59e636215d94d1ded2ab9f60e4bfc"><td class="memItemLeft" align="right" valign="top"><a id="ac3a59e636215d94d1ded2ab9f60e4bfc"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setCamsResolution</b> (const <a class="el" href="classxv_1_1ColorCamera.html#acb488c507a1956ac0016953a60740cd4">xv::ColorCamera::Resolution</a> &amp;resolution, int camIndex=1)=0</td></tr>
+<tr class="separator:ac3a59e636215d94d1ded2ab9f60e4bfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae623abe1af99d330fc6979dcf3bcf881"><td class="memItemLeft" align="right" valign="top"><a id="ae623abe1af99d330fc6979dcf3bcf881"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setCamsFramerate</b> (float framerate, int camIndex=1)=0</td></tr>
+<tr class="separator:ae623abe1af99d330fc6979dcf3bcf881"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4adf93eb94c7a92e857cada0e15d7d7"><td class="memItemLeft" align="right" valign="top"><a id="af4adf93eb94c7a92e857cada0e15d7d7"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerCam2Callback</b> (std::function&lt; void(<a class="el" href="structxv_1_1ColorImage.html">ColorImage</a> const &amp;)&gt; c)=0</td></tr>
+<tr class="separator:af4adf93eb94c7a92e857cada0e15d7d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3953b663dbd1c227be1a0220593810f4"><td class="memItemLeft" align="right" valign="top"><a id="a3953b663dbd1c227be1a0220593810f4"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterCam2Callback</b> (int callbackID)=0</td></tr>
+<tr class="separator:a3953b663dbd1c227be1a0220593810f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -287,7 +319,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setFramerate<
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

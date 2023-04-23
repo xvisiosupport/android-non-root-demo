@@ -74,6 +74,11 @@ $(function() {
 <div class="title">xv::ExternalStream Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>A class to handle external stream data. Only support in Arm now.  
+ <a href="classxv_1_1ExternalStream.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -83,6 +88,18 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class=
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a1b040677a8258614d9ad0449c1e77b24"><td class="memItemLeft" align="right" valign="top"><a id="a1b040677a8258614d9ad0449c1e77b24"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerRawCallback</b> (std::function&lt; void(<a class="el" href="structxv_1_1ExternalData.html">xv::ExternalData</a> const &amp;)&gt; rawExternalCallback)=0</td></tr>
+<tr class="separator:a1b040677a8258614d9ad0449c1e77b24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6d58dc00eebb63a61a3cb6a0bc9c992"><td class="memItemLeft" align="right" valign="top"><a id="ac6d58dc00eebb63a61a3cb6a0bc9c992"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterRawCallback</b> (int callbackId)=0</td></tr>
+<tr class="separator:ac6d58dc00eebb63a61a3cb6a0bc9c992"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27dfb5f85acbe218a246e89418c96bea"><td class="memItemLeft" align="right" valign="top"><a id="a27dfb5f85acbe218a246e89418c96bea"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerFixedPoseCallback</b> (std::function&lt; void(<a class="el" href="structxv_1_1Pose.html">xv::Pose</a> const &amp;)&gt; fixedExternalCallback)=0</td></tr>
+<tr class="separator:a27dfb5f85acbe218a246e89418c96bea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac81faa8209645ec7dd27b1b35eefb37d"><td class="memItemLeft" align="right" valign="top"><a id="ac81faa8209645ec7dd27b1b35eefb37d"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterFixedPoseCallback</b> (int callbackId)=0</td></tr>
+<tr class="separator:ac81faa8209645ec7dd27b1b35eefb37d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab421406a994d7407bc55f32dbc351cda"><td class="memItemLeft" align="right" valign="top"><a id="ab421406a994d7407bc55f32dbc351cda"></a>
 virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerRuntimePoseCallback</b> (std::function&lt; void(<a class="el" href="structxv_1_1Pose.html">xv::Pose</a> const &amp;)&gt; runtimeExternalCallback)=0</td></tr>
 <tr class="separator:ab421406a994d7407bc55f32dbc351cda"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -98,6 +115,21 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterSca
 <tr class="memitem:a734491c1ef0f1bbd9871f1d2cfb9fae2"><td class="memItemLeft" align="right" valign="top"><a id="a734491c1ef0f1bbd9871f1d2cfb9fae2"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>getPose</b> (<a class="el" href="structxv_1_1Pose.html">Pose</a> &amp;pose)=0</td></tr>
 <tr class="separator:a734491c1ef0f1bbd9871f1d2cfb9fae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b68f3c97d0fccd6f05e8fb4ac25fea9"><td class="memItemLeft" align="right" valign="top"><a id="a8b68f3c97d0fccd6f05e8fb4ac25fea9"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>SetScaleArrayRange</b> (int range)=0</td></tr>
+<tr class="separator:a8b68f3c97d0fccd6f05e8fb4ac25fea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace9eb743d46b9fd63ae075ae54d3ad5c"><td class="memItemLeft" align="right" valign="top"><a id="ace9eb743d46b9fd63ae075ae54d3ad5c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setScaleRange</b> (double low, double high)=0</td></tr>
+<tr class="separator:ace9eb743d46b9fd63ae075ae54d3ad5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0e30af7994f8def2f8b8305e1965411"><td class="memItemLeft" align="right" valign="top"><a id="af0e30af7994f8def2f8b8305e1965411"></a>
+virtual Vector3d&#160;</td><td class="memItemRight" valign="bottom"><b>rotationToEuler</b> (Matrix3d const &amp;rot)=0</td></tr>
+<tr class="separator:af0e30af7994f8def2f8b8305e1965411"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacf9d66e84c783971c528f67029d75a2"><td class="memItemLeft" align="right" valign="top"><a id="aacf9d66e84c783971c528f67029d75a2"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setResetStatus</b> (bool status)=0</td></tr>
+<tr class="separator:aacf9d66e84c783971c528f67029d75a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a8efb399e886ee1256aeeb4da2d91e0"><td class="memItemLeft" align="right" valign="top"><a id="a2a8efb399e886ee1256aeeb4da2d91e0"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setDeviceStopStatus</b> (bool status)=0</td></tr>
+<tr class="separator:a2a8efb399e886ee1256aeeb4da2d91e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -115,8 +147,10 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memdesc:a381f61569d002409b3e3486d5dbb503c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unregister callback. <br /></td></tr>
 <tr class="separator:a381f61569d002409b3e3486d5dbb503c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A class to handle external stream data. Only support in Arm now. </p>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
+<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

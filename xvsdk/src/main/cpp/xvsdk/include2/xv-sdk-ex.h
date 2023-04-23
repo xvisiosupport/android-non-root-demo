@@ -230,6 +230,14 @@ public:
      * @brief Send external fisheye image and/or key points to SDK.
      */
     virtual void pushStereo(FisheyeKeyPoints<2,32> const& stereo) = 0;
+    /**
+     * @brief Send external fisheye image to SDK.
+     */
+    virtual void pushStereo(FisheyeImages const& stereo) = 0;
+    /**
+     * @brief Send external 4-cameras fisheye image and/or key points to SDK.
+     */
+    virtual void push4Cameras(FisheyeKeyPoints<4,32> const& stereo) = 0;
 
     virtual bool setDisplayCalibration(const std::vector<CalibrationEx>&) = 0;
     virtual bool setRgbCalibration(const std::vector<CalibrationEx>&) = 0;
@@ -328,7 +336,7 @@ public:
      * @param f name of the AprilTag family to use (support: "36h11" "25h9" "16h5" and "14h12")
      */
     explicit AprilTagDetector(xv::UnifiedCameraModel const& c, xv::Transform const& camerPose, std::string const& f="36h11", bool subpixelic=false);
-    
+
     /**
      * @brief Construct an AprilTag detector on single view
      * @param c camera calibration
@@ -550,6 +558,10 @@ public:
      */
     std::map<int,xv::Pose> getTagDetections(std::string const& detectorId);
 
+    virtual DeviceEx::StereoInputType externalStereoInputType() const = 0;
+    virtual bool getAecParameters(IspAecSetting& params) = 0;
+    virtual void setAecParameters(const IspAecSetting& params) = 0;
+
     virtual ~FisheyeCamerasEx() { }
 
 };
@@ -633,26 +645,34 @@ class SlamEx : public Slam {
 protected:
 
     bool m_enableOnlineLoopClosure = false;
-    bool m_enableSurface = false;
+    bool m_enableSurfaceReconstruction = false;
+    bool m_enableSurfacePlanes = false;
+    bool m_enableSurfaceInstantReconstruction = false;
+    bool m_enableSurfaceInstantPlanes = false;
     bool m_enableSurfaceTexturing = false;
     bool m_enableSurfaceMultiResolutionMesh = false;
     bool m_enableSurfaceMobileObjects = false;
-    bool m_enableSurfacePlanes = false;
     bool m_surfaceUseFisheyes = false; //!< instead of Tof as depth source
     bool m_surfaceUseFisheyeTexturing = true; //!< fisheye texturing instead of RGB texturing
     double m_surfaceMinVoxelSize = 0.1;
+    bool m_useAccel = true; //!< use the IMU acceleration (true by default)
 
 public:
 
     virtual void setEnableOnlineLoopClosure(bool enable) { m_enableOnlineLoopClosure = enable; }
-    virtual void setEnableSurface(bool enable) { m_enableSurface = enable; }
+    virtual void setEnableSurfaceReconstruction(bool enable) { m_enableSurfaceReconstruction = enable; }
+    virtual void setEnableSurfacePlanes(bool enable) { m_enableSurfacePlanes = enable;}
+    virtual void setEnableSurfaceInstantReconstruction(bool enable) { m_enableSurfaceInstantReconstruction = enable; }
+    virtual void setEnableSurfaceInstantPlanes(bool enable) { m_enableSurfaceInstantPlanes = enable; }
     virtual void setEnableSurfaceTexturing(bool enable) { m_enableSurfaceTexturing = enable; }
     virtual void setEnableSurfaceMultiResolutionMesh(bool enable) { m_enableSurfaceMultiResolutionMesh = enable;}
     virtual void setEnableSurfaceMobileObjects(bool enable) { m_enableSurfaceMobileObjects = enable;}
-    virtual void setEnableSurfacePlanes(bool enable) { m_enableSurfacePlanes = enable;}
     virtual void setSurfaceUseFisheyes(bool use) { m_surfaceUseFisheyes = use;}
     virtual void setSurfaceUseFisheyeTexturing(bool use) { m_surfaceUseFisheyeTexturing = use;}
     virtual void setSurfaceMinVoxelSize(double size) { m_surfaceMinVoxelSize = size; }
+
+    virtual void setUseAccel(bool use) { m_useAccel = use; }
+
     virtual int registerLocal3dPointsCallback(std::function<void (std::shared_ptr<const std::vector<std::array<double,3>>>)>) = 0;
     virtual bool unregister3dPointsCallback(int callbackId) = 0;
     virtual bool getLastVSlamPose(Pose &) { return false; }
@@ -699,6 +719,12 @@ public:
     virtual bool getSurface(std::shared_ptr<const xv::ex::Surfaces>&) = 0;
 
     /**
+     * @brief Callback to get the point matches updates.
+     * @return Id of the callback (used to unregister the callback).
+     */
+    virtual int registerPointMatchesCallback(std::function<void (std::shared_ptr<const xv::PointMatches>)>) = 0;
+    virtual bool unregisterPointMatchesCallback(int callbackId) = 0;
+    /**
      * @brief Set the tag tos use in SLAM; must be done before calling slam->start()
      * @param v : list of tags
      * @return success
@@ -732,7 +758,7 @@ public:
      * If SLAM is running, then the output pointerPose is in World frame coordinate of the SLAM, else it is relative to the IMU frame coordinate.
      *
      * @param pointerPose: 3D position in World frame coordinate of the point selected in RGB
-     * @param hostTimestamp: timestamp corresponding to the pointing
+     * @param hostTimestamp: timestamp corresponding to the pointing, if no SLAM is running, set this value to -1
      * @param rgbPixelPoint: xy position of the point in color image (in pixel)
      * @param radius: size of the area to select for ToF 3D points selection
      * @return true if succes, false else
@@ -864,8 +890,9 @@ public:
 
 /**
  * @brief Obtain a virtual #Device, and input sensor data to the sdk from caller.
+ * @param deviceId: identifier of the device to create
  * @return A #Device.
  */
-std::shared_ptr<Device> getVirtualDevice();
+std::shared_ptr<Device> getVirtualDevice(std::string const& deviceId="");
 
 }

@@ -107,6 +107,8 @@ public:
     virtual bool start() {throw std::runtime_error("Invalid call, not implemented.");}
     virtual bool stop() {throw std::runtime_error("Invalid call, not implemented.");}
     virtual bool reset() {throw std::runtime_error("Invalid call, not implemented.");}
+    virtual bool resume() {throw std::runtime_error("Invalid call, not implemented.");}
+    virtual bool pause() {throw std::runtime_error("Invalid call, not implemented.");}
     virtual bool getPose(Pose &, double );
     virtual bool getPoseAt(Pose &, double );
 
@@ -147,6 +149,8 @@ public:
     virtual int registerSurfaceCallback(std::function<void (std::shared_ptr<const ex::Surfaces>)> );
     virtual bool unregisterSurfaceCallback(int );
 
+    virtual int registerPointMatchesCallback(std::function<void (std::shared_ptr<const xv::PointMatches>)> cb);
+    virtual bool unregisterPointMatchesCallback();
     virtual bool startSurfaceReconstruction();
     virtual bool stopSurfaceReconstruction();
     virtual bool startPlaneDetection();
@@ -244,6 +248,134 @@ private :
    std::shared_ptr<SlamBase> m_slamHostOnly;
    std::shared_ptr<SlamBase> m_slamEdgeLocHostMap;
 
+   std::string m_calibrationFilePath = "/sdcard/";
+
+   const std::string m_ImuJson = R"(
+    {
+        "temperature": 0.0,
+        "accelBiasX": 0.0,
+        "accelBiasY": 0.0,
+        "accelBiasZ": 0.0,
+        "gyroBiasX": 0.0,
+        "gyroBiasY": 0.0,
+        "gyroBiasZ": 0.0,
+        "accelScaleInv0": 0.0,
+        "accelScaleInv1": 0.0,
+        "accelScaleInv2": 0.0,
+        "accelScaleInv3": 0.0,
+        "accelScaleInv4": 0.0,
+        "accelScaleInv5": 0.0,
+        "accelScaleInv6": 0.0,
+        "accelScaleInv7": 0.0,
+        "accelScaleInv8": 0.0,
+        "gyroScaleInv0": 0.0,
+        "gyroScaleInv1": 0.0,
+        "gyroScaleInv2": 0.0,
+        "gyroScaleInv3": 0.0,
+        "gyroScaleInv4": 0.0,
+        "gyroScaleInv5": 0.0,
+        "gyroScaleInv6": 0.0,
+        "gyroScaleInv7": 0.0,
+        "gyroScaleInv8": 0.0
+    }
+    )";
+
+    const std::string m_FisheyeJson_ucm = R"(
+    {
+        "timestampoffset": 0.0,
+        "leftucmw": 0,
+        "leftucmh": 0,
+        "leftucmfx": 0.0,
+        "leftucmfy": 0.0,
+        "leftucmu0": 0.0,
+        "leftucmv0": 0.0,
+        "leftucmxi": 0.0,
+        "lefttranslation": [],
+        "leftrotation": [],
+        "rightucmw": 0,
+        "rightucmh": 0,
+        "rightucmfx": 0.0,
+        "rightucmfy": 0.0,
+        "rightucmu0": 0.0,
+        "rightucmv0": 0.0,
+        "rightucmxi": 0.0,
+        "righttranslation": [],
+        "rightrotation": [],
+        "left2ucmw": 0,
+        "left2ucmh": 0,
+        "left2ucmfx": 0.0,
+        "left2ucmfy": 0.0,
+        "left2ucmu0": 0.0,
+        "left2ucmv0": 0.0,
+        "left2ucmxi": 0.0,
+        "left2translation": [],
+        "left2rotation": [],
+        "right2ucmw": 0,
+        "right2ucmh": 0,
+        "right2ucmfx": 0.0,
+        "right2ucmfy": 0.0,
+        "right2ucmu0": 0.0,
+        "right2ucmv0": 0.0,
+        "right2ucmxi": 0.0,
+        "right2translation": [],
+        "right2rotation": []
+    }
+    )";
+
+    const std::string m_FisheyeJson_seucm = R"(
+    {
+        "timestampoffset": 0.0,
+        "leftseucmw": 0,
+        "leftseucmh": 0,
+        "leftseucmfx": 0.0,
+        "leftseucmfy": 0.0,
+        "leftseucmu0": 0.0,
+        "leftseucmv0": 0.0,
+        "leftseucmeu": 0.0,
+        "leftseucmev": 0.0,
+        "leftseucmalpha": 0.0,
+        "leftseucmbeta": 0.0,
+        "lefttranslation": [],
+        "leftrotation": [],
+        "rightseucmw": 0,
+        "rightseucmh": 0,
+        "rightseucmfx": 0.0,
+        "rightseucmfy": 0.0,
+        "rightseucmu0": 0.0,
+        "rightseucmv0": 0.0,
+        "rightseucmeu": 0.0,
+        "rightseucmev": 0.0,
+        "rightseucmalpha": 0.0,
+        "rightseucmbeta": 0.0,
+        "righttranslation": [],
+        "rightrotation": [],
+        "left2seucmw": 0,
+        "left2seucmh": 0,
+        "left2seucmfx": 0.0,
+        "left2seucmfy": 0.0,
+        "left2seucmu0": 0.0,
+        "left2seucmv0": 0.0,
+        "left2seucmeu": 0.0,
+        "left2seucmev": 0.0,
+        "left2seucmalpha": 0.0,
+        "left2seucmbeta": 0.0,
+        "left2translation": [],
+        "left2rotation": [],
+        "right2seucmw": 0,
+        "right2seucmh": 0,
+        "right2seucmfx": 0.0,
+        "right2seucmfy": 0.0,
+        "right2seucmu0": 0.0,
+        "right2seucmv0": 0.0,
+        "right2seucmeu": 0.0,
+        "right2seucmev": 0.0,
+        "right2seucmalpha": 0.0,
+        "right2seucmbeta": 0.0,
+        "right2translation": [],
+        "right2rotation": []
+    }
+    )";
+
 public:
 
    static bool s_slamVisionOnlyEnabled;
@@ -279,12 +411,27 @@ public:
 
    virtual bool writeEyetrackingCalibration(const std::vector<Calibration>&) { return false; }
 
+   virtual bool writeImuCalibrationToFile(const ImuSensorCalibration& imuCalib);
+   virtual bool getImuCalibrationFromFile(ImuSensorCalibration& imuCalib);
+   virtual bool writeFisheyeCalibrationToFile(const std::vector<CalibrationEx>& fisheyeCalib, double imuFisheyeTimestampOffset);
+   virtual bool getFisheyeCalibrationFromFile(std::vector<CalibrationEx>& fisheyeCalib, double& imuFisheyeTimestampOffset);
+
    /**
     * @brief Provide a SLAM without IMU data.
     */
    std::shared_ptr<SlamBase> slamVisionOnly();
 
-   bool initSlamHostOnly(std::shared_ptr<DeviceImpl> d, bool enableOnlineLoopClosure=false, bool enableSurface=false, bool enableSurfaceTexturing=false, bool surfaceMultiResolutionMesh=false, bool surfaceMobileObjects=false, bool enableSurfacePlanes=false, bool surfaceUseFisheyes=false, bool surfaceUseFisheyeTexturing=false);
+   bool initSlamHostOnly(std::shared_ptr<DeviceImpl> d,
+                         bool enableOnlineLoopClosure=false,
+                         bool enableSurfaceReconstruction=false,
+                         bool enableSurfacePlanes=false,
+                         bool enableSurfaceInstantReconstruction=false,
+                         bool enableSurfaceInstantPlanes=false,
+                         bool enableSurfaceTexturing=false,
+                         bool surfaceMultiResolutionMesh=false,
+                         bool surfaceMobileObjects=false,
+                         bool surfaceUseFisheyes=false,
+                         bool surfaceUseFisheyeTexturing=false);
 
    /**
     * @brief Provide a SLAM only on host (only use IMU and fisheye images from the device).
@@ -295,7 +442,6 @@ public:
     * @brief Provide a SLAM with localization on edge and mapping on host.
     */
    std::shared_ptr<SlamBase> slamEdgeLocHostMap();
-
 
    virtual ~DevicePrivate();
 };
@@ -363,6 +509,7 @@ class StereoRectificationMesh {
     ImageWarpMesh right;
 
 public:
+    StereoRectificationMesh(std::vector<xv::Calibration> const& calib, std::size_t w, std::size_t h);
     StereoRectificationMesh(std::vector<xv::Calibration> const& calib, bool useUcm=true);
     StereoRectificationMesh(std::vector<xv::Calibration> const& calib, double focal, double baseline);
     StereoRectificationMesh(std::vector<xv::Calibration> const& calib, std::vector<xv::Calibration> const& displayCalib);
@@ -391,6 +538,7 @@ private:
     void init(std::vector<xv::Calibration> const& calib);
     void init(const std::vector<xv::Calibration> &calib, const std::vector<xv::Calibration> &displayCalib);
     void initPdcm(std::vector<xv::Calibration> const& calib);
+    void init(const std::vector<std::pair<xv::Transform,std::shared_ptr<xv::CameraModel>>> &calib);
 };
 
 }
