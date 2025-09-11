@@ -49,41 +49,26 @@ LOCAL_MODULE := xslam-edge-sdk
 LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam-edge-sdk.so
 include $(PREBUILT_SHARED_LIBRARY)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := xvslam
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxvslam.so
+include $(PREBUILT_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := xslam-slam_core
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_core.so
-include $(PREBUILT_SHARED_LIBRARY)
-include $(CLEAR_VARS)
-LOCAL_MODULE := xslam-slam_lib-ange
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_libange.so
-include $(PREBUILT_SHARED_LIBRARY)
 
 # include $(CLEAR_VARS)
 # LOCAL_MODULE := xslam-slam_surface-reconstruction
 # LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_surfacereconstruction.so
 # include $(PREBUILT_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := xslam_algo_sdk
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_algo_sdk.so
-LOCAL_SHARED_LIBRARIES := xslam_core
-include $(PREBUILT_SHARED_LIBRARY)
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := opencv_core_so
+# LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libopencv_core.so
+# include $(PREBUILT_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := opencv_core_so
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libopencv_core.so
-include $(PREBUILT_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := opencv_imgproc_so
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libopencv_imgproc.so
-include $(PREBUILT_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := apriltag
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libapriltag.so
-include $(PREBUILT_SHARED_LIBRARY)
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := opencv_imgproc_so
+# LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libopencv_imgproc.so
+# include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := sony_iu456
@@ -131,10 +116,7 @@ LOCAL_MODULE := xvsdk_wrapper
 LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxvsdk_wrapper.so
 include $(PREBUILT_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := xslam_hand
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxslam_hand.so
-include $(PREBUILT_SHARED_LIBRARY)
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := et_TrackerSDK
@@ -153,48 +135,58 @@ LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxvisp.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := xvsdk_handtracking
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libxvisio_handtracking.so
+LOCAL_MODULE := gaze_eyetracker
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libeyetracking.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := opencv_imgcodecs
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libopencv_imgcodecs.so
+LOCAL_MODULE := gaze_utility
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libeyetracking_utility.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := lib_sensorDriver
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libsensordriver.so
+LOCAL_MODULE := IrisCore
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libeye_iris_core.so
+include $(PREBUILT_SHARED_LIBRARY)
+
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := IrisMNN
+# LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libMNN.so
+# include $(PREBUILT_SHARED_LIBRARY)
+
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := IrisMNNExpress
+# LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libMNN_Express.so
+# include $(PREBUILT_SHARED_LIBRARY)
+
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := IrisMNNVulkan
+# LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libMNN_Vulkan.so
+# include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := IrisBSP
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libpirisbsp.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := handskeleton_all
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libhandskeleton_all.so
+LOCAL_MODULE := IrisCPP
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libc++_shared.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := handskeleton_all_model
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libhandskeleton_all_model.so
+LOCAL_MODULE := zxing
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libZXing.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := TNN
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libTNN.so
+LOCAL_MODULE := wirelessController
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libwirelessController.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := SNPE
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libSNPE.so
-include $(PREBUILT_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := CERES
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libceres.so
-include $(PREBUILT_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := shared_xvhand
-LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libc++_shared_xvhand.so
+LOCAL_MODULE := Vueta
+LOCAL_SRC_FILES := ../../libs/$(TARGET_ARCH_ABI)/libvueta-and.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 # --------------------------------------------------------------------

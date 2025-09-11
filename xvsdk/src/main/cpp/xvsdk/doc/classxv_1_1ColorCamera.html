@@ -104,6 +104,12 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class=
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:aef318964c7c8d4546595f40f79b022c2"><td class="memItemLeft" align="right" valign="top"><a id="aef318964c7c8d4546595f40f79b022c2"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setCompensation</b> (int compensation)=0</td></tr>
+<tr class="separator:aef318964c7c8d4546595f40f79b022c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf613950dea8c318f4d5b0f540987b25"><td class="memItemLeft" align="right" valign="top"><a id="abf613950dea8c318f4d5b0f540987b25"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setAwb</b> (int awb)=0</td></tr>
+<tr class="separator:abf613950dea8c318f4d5b0f540987b25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8217cbfe651cc4b13f9376860529ea8"><td class="memItemLeft" align="right" valign="top"><a id="ab8217cbfe651cc4b13f9376860529ea8"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setResolution</b> (const <a class="el" href="classxv_1_1ColorCamera.html#acb488c507a1956ac0016953a60740cd4">Resolution</a> &amp;resolution)=0</td></tr>
 <tr class="separator:ab8217cbfe651cc4b13f9376860529ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +140,15 @@ virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerCam2Ca
 <tr class="memitem:a3953b663dbd1c227be1a0220593810f4"><td class="memItemLeft" align="right" valign="top"><a id="a3953b663dbd1c227be1a0220593810f4"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterCam2Callback</b> (int callbackID)=0</td></tr>
 <tr class="separator:a3953b663dbd1c227be1a0220593810f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af432e928a71a7c06cbca6e60df1dab19"><td class="memItemLeft" align="right" valign="top"><a id="af432e928a71a7c06cbca6e60df1dab19"></a>
+virtual const std::vector&lt; <a class="el" href="structxv_1_1Calibration.html">Calibration</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>calibration2</b> ()=0</td></tr>
+<tr class="separator:af432e928a71a7c06cbca6e60df1dab19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1597a4441dda9e13558451a425f47a0"><td class="memItemLeft" align="right" valign="top"><a id="af1597a4441dda9e13558451a425f47a0"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>checkCam2Support</b> ()=0</td></tr>
+<tr class="separator:af1597a4441dda9e13558451a425f47a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac8781787e2f3cb40864ea612c7d7637"><td class="memItemLeft" align="right" valign="top"><a id="aac8781787e2f3cb40864ea612c7d7637"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>getExposure</b> (<a class="el" href="structxv_1_1ExposureParam.html">ExposureParam</a> &amp;param)=0</td></tr>
+<tr class="separator:aac8781787e2f3cb40864ea612c7d7637"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -319,7 +334,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setFramerate<
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/blues/sdk/xvsdk-0519/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

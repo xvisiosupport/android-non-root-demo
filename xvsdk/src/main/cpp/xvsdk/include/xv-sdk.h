@@ -2,7 +2,9 @@
 
 #include <map>
 #include <functional>
-
+#if defined( __ANDROID__ )
+#include "jni.h" 
+#endif
 #include "xv-types.h"
 
 namespace xv {
@@ -55,7 +57,6 @@ public:
     // TODO add more settings like AWB in later release
     virtual bool setResolution( int resolution );
     virtual bool setFramerate( float framerate );
-
     // aecMode 0:auto 1:manual
     /**
      * @brief Exposure setting.
@@ -167,6 +168,11 @@ public:
  */
 class FisheyeCameras : virtual public Stream<FisheyeImages const &>, virtual public Camera {
 public:
+    virtual int registerAntiDistortionCallback(std::function<void (FisheyeImages const &)> cb ) = 0;
+    virtual bool unregisterAntiDistortionCallback( int callbackID ) = 0;
+
+    virtual bool checkAntiDistortionSupport() = 0;
+    virtual bool getExposure(ExposureParam& param) = 0;
     virtual ~FisheyeCameras(){}
 };
 
@@ -221,6 +227,8 @@ public:
         Unknown
     };
 
+    virtual bool setCompensation(int compensation) = 0;
+    virtual bool setAwb(int awb) = 0;
     virtual bool setResolution( const Resolution &resolution ) = 0;
     virtual bool isSupportAFRGB() = 0;
     virtual bool setRGBMode(const Mode &mode) = 0;
@@ -231,6 +239,9 @@ public:
     virtual bool setCamsFramerate(float framerate, int camIndex = 1) = 0;
     virtual int registerCam2Callback(std::function<void (ColorImage const &)> c ) = 0;
     virtual bool unregisterCam2Callback( int callbackID ) = 0;
+    virtual const std::vector<Calibration>& calibration2() = 0;
+    virtual bool checkCam2Support() = 0;
+    virtual bool getExposure(ExposureParam& param) = 0;
 
     virtual ~ColorCamera(){}
 };
@@ -246,7 +257,10 @@ public:
     enum class Framerate{ FPS_5 ,FPS_10 ,FPS_15 ,FPS_20 ,FPS_25 ,FPS_30 };
     enum class Resolution{ Unknown = -1,VGA = 0 ,QVGA ,HQVGA};
     enum class Manufacturer {Unknown = -1, Pmd = 0, Sony};
-
+    enum class ColorDepthBase { RGB = 0, TOF = 1 };
+    
+    virtual bool setColorDepthBase(ColorDepthBase base) = 0;
+    virtual ColorDepthBase getColoerDepthBase() = 0;
     /**
      * @brief Gives access to composed image with RBG color on depth images.
      */
@@ -329,10 +343,9 @@ public:
     */
     virtual void setFilterFile(std::string filePath) = 0;
 
-    /**
-     * @brief check if support color depth image
-    */
-    virtual bool checkColorDepthImageSupport() = 0;
+    virtual void enableIrGamma(bool enable) = 0;
+
+    virtual bool isEnableIrGamma() = 0;
 
     virtual ~TofCamera() {}
 };
@@ -489,6 +502,23 @@ public:
      */
     virtual Pose poseScaleCalibration(const Pose& pose) = 0;
 
+    /**
+     * @brief Reset the 6dof pose coordinate (SLAM)
+     */
+    virtual void poseReset() = 0;
+
+    /**
+     * @brief set slam mode
+     * @param mode 0 for 6dof, 1 for 3dof
+     */
+    virtual void poseSetMode(int mode) = 0;
+	
+	virtual int registerSharedMapCallback(std::function<void (std::vector<uint8_t> const&)> cb) = 0;
+    
+    virtual bool unregisterSharedMapCallback(int callbackId) = 0;
+
+    virtual const std::vector<uint8_t>& getFirstSharedMap() = 0;
+
     virtual ~Slam() {}
 };
 
@@ -509,6 +539,15 @@ public:
     virtual bool unregisterCnnRawCallback(int callbackId) = 0;
 
     virtual ~ObjectDetector() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the object detector (CNN) in RKNN3588 platform
+ */
+class ObjectDetectorRKNN3588 : virtual public Stream<std::vector<Det2dObject> const&> {
+public:
+    virtual bool setModel( const std::string &filepath ) = 0;
+    virtual ~ObjectDetectorRKNN3588() {}
 };
 
 /**
@@ -555,6 +594,58 @@ public:
 };
 
 /**
+ * @brief A class to handle callbacks of the IR tracking camera.
+ */
+class IrTrackingCamera : virtual public Stream<IrTrackingImage const &>, virtual public Camera {
+public:
+    /**
+     * @brief start camera2 streaming.
+     */
+    virtual bool startCamera2() = 0;
+    /**
+     * @brief stop camera2 streaming.
+     */
+    virtual bool stopCamera2() = 0;
+
+    /**
+     * @brief Register callback to receive data.
+     */
+    virtual int registerCamera2Callback(std::function<void (IrTrackingImage const&  )>) = 0;
+    /**
+     * @brief Unregister callback.
+     */
+    virtual bool unregisterCamera2Callback(int callbackId) = 0;
+
+    virtual ~IrTrackingCamera() {}
+
+    virtual int getFrameRate() = 0;
+    virtual bool getResolution(ResolutionParam& param) = 0;
+    virtual bool getROI(RoiParam& param) = 0;
+    virtual bool getTemperature(IrTrackingTemperature& temperatures) = 0;
+    /**
+     * @brief Get ir tracking camera(1 and 2) exposure time,the unit is microseconds.
+     * @return if error will return -1.
+     */
+    virtual int getExposureTime() = 0;
+    /**
+     * @brief Set ir tracking camera(1 and 2) exposure time. 
+     * @param timeUs ,exposure time, the unit is microseconds，range is 16 μs to 22800 μs
+     */
+    virtual bool setExposureTime(int time) = 0;
+
+    /**
+     * @brief Enable IR tracking camera led. 
+     */
+    virtual bool enableLed(int index, bool enable) = 0;
+    
+    /**
+     * @brief Set IR tracking camera led working time.
+     * @param time , The unit is ms. The min value is 0, the max value is 1ms.
+     */
+    virtual bool setLedTime(int index, float time) = 0;
+};
+
+/**
  * @brief A class to handle callbacks of the eyetracking camera.
  */
 class EyetrackingCamera : virtual public Stream<EyetrackingImage const &>, virtual public Camera {
@@ -582,6 +673,14 @@ public:
     virtual ~EyetrackingCamera() {}
 };
 
+class BeiDouGPS : virtual public Stream<BeiDouGPSData const &>
+{
+public:
+    virtual bool setMode(BeiDouGPSMode mode) = 0;
+    virtual ~BeiDouGPS(){};
+};
+
+
 /**
  * @brief A class to handle callbacks of the gaze data.
  */
@@ -595,7 +694,113 @@ public:
      */
     virtual void setConfigPath(std::string config) = 0;
 
+    /**
+     * @brief Set eye ready status for gaze.
+     */
+    virtual void setUsrEyeReady() = 0;
+
+    /**
+     * @brief Set gaze configs.
+     */
+    virtual void setGazeConfigs(GazeConfigs configs) = 0;
+
+    /**
+     * @brief get gaze status.
+     */
+    virtual bool getGazeStatus() = 0;
+
+    /**
+     * @brief enable dump eyetracking files.
+     */
+    virtual void enableDump(bool enable) = 0;
+
+     /**
+     * @brief set to pref data to gaze.
+     */
+    virtual int setPref(int et_idx, uint8_t *data, int size ) = 0;
+
+     /**
+     * @brief get pref data and save.
+     */
+    virtual int getPref(int et_idx, uint8_t *data, int *size ) = 0;
+
+    /**
+     * @brief get hi value.
+     */
+    virtual int getHiValue() = 0;
+
+     /**
+     * @brief get sr value.
+     */
+    virtual int getSrValue() = 0;
+
+    /**
+     * @brief get eye center 3D position in et camera CS, in unit of mm
+     */
+    virtual int getOeValue(int et_idx, float *oe_v, int cs) = 0;
+
+    /**
+     * @brief get eye center 3D position in world CS
+     */
+    virtual int getEyeValue(int et_idx, float *eye_v, int cs) = 0;
+
+    /**
+     * @brief set gaze mode
+     */
+    virtual void setGazeMode(int mode) = 0;
+
     virtual ~GazeStream() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the Iris data.
+ */
+class IrisStream : virtual public Stream<XV_IRIS_DATA const &>{
+public:
+
+#if defined( __ANDROID__ )
+    virtual bool start(JNIEnv* env, jobject thiz, std::string offlineS) = 0;
+
+    virtual const char* onlineActive(JNIEnv *env, jobject context, const char* initLicense, const char* userId, const char* secret, int &activeResult) = 0;
+#endif
+    /**
+     * @brief Set user name.
+     *
+     * @param[in] name string value
+     */
+    virtual void setUserName(std::string name) = 0;
+
+    /**
+     * @brief Callback to get the enroll information.
+     *
+     * @return Id of the callback (used to unregister the callback).
+     */
+    virtual int registerEnrollCallback(std::function<void (XV_IRIS_DATA const &)>) = 0;
+    virtual bool UnregisterEnrollCallback(int callbackID) = 0;
+
+    /**
+     * @brief Callback to get the identify information.
+     *
+     * @return Id of the callback (used to unregister the callback).
+     */
+    virtual int registerIdentifyCallback(std::function<void (XV_IRIS_DATA const &)>) = 0;
+    virtual bool UnregisterIdentifyCallback(int callbackID) = 0;
+
+    /**
+     * @brief Load the iris features the identify information.
+     *
+     * @return result of the method, true is successful, false is failure.
+     */
+    virtual bool loadIrisInfo(unsigned char* iris_features, int size) = 0;
+
+    /**
+     * @brief Set coe configuration file path.
+     *
+     * @param[in] config string value, end with "/"
+     */
+    virtual void setConfigPath(std::string config) = 0;
+
+    virtual ~IrisStream() {}
 };
 
 /**
@@ -629,62 +834,13 @@ public:
      *
      * @return Id of the callback (used to unregister the callback).
      */
-    virtual int registerSlamKeypointsCallback(std::function<void (std::shared_ptr<const std::vector<Pose>>)> callback) = 0;
+    virtual int registerSlamKeypointsCallback(std::function<void (std::shared_ptr<const xv::HandPose>)> callback) = 0;
     virtual bool unregisterSlamKeypointsCallback(int callbackId) = 0;
 
     virtual ~GestureStream() {}
-};
 
-/**
- * @brief A class to handle extern gusture data. Only support on Android now.
- */
-class GestureStreamEX : virtual public Stream<GestureData const &>{
-public:
-
-    /**
-     * @brief Start extend gesture stream.
-     *
-     * @param[in] jvm void* value
-     *
-     * @param[in] so_path const std::string value
-     * 
-     * @return Result of start method, true:succeed, false:failed.
-     */
-    virtual bool start(void* jvm, const std::string so_path) = 0;
-
-    /**
-     * @brief Callback to get the gesture keypoints pose information based on slam position.
-     *
-     * The vector contains gesture keypoints pose based on slam position,  size 25 means one hand, vector size 50 means two hands,  3D points with depth value.
-     *
-     * @return Id of the callback (used to unregister the callback).
-     */
-    virtual int registerPosCallback(std::function<void (std::shared_ptr<const std::vector<xv::Pose>>)> callback) = 0;
-    virtual bool unregisterPosCallback(int callbackId) = 0;
-
-    /**
-     * @brief Manually get the gesture informatio at specific timestamp.
-     *
-     * @param[in] pose xv::Pose value, the pose when you call this method, use getPoseAt to get.
-     *
-     * @param[in] timestamp double value, the timestamp value when you call this method.
-     *
-     * @return GestureData at specific timestamp.
-     */
-    virtual GestureData getGesture(xv::Pose pose, double timestamp) = 0;
-
-    /**
-     * @brief Manually get the gesture keypoints pose informatio at specific timestamp.
-     *
-     * @param[in] pose xv::Pose value, the pose when you call this method, use getPoseAt to get.
-     *
-     * @param[in] timestamp double value, the timestamp value when you call this method.
-     *
-     * @return Gesture keypoints pose at specific timestamp.
-     */
-    virtual std::vector<xv::Pose> GetGesturePose(xv::Pose pose, double timestamp) = 0;
-
-    virtual ~GestureStreamEX() {}
+    virtual bool setPlatform( int platform , bool ego) = 0;
+    virtual bool setParams( int filter_level , bool easy_pinch) = 0;
 };
 
 /**
@@ -696,12 +852,56 @@ public:
 };
 
 /**
- * @brief A class to handle callbacks of the gaze data.
+ * @brief A class to handle callbacks of the GPS distance data.
  */
 class GPSDistanceStream : virtual public Stream<GPSDistanceData const &>{
 public:
 
     virtual ~GPSDistanceStream() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the terrestrial magnetism data.
+ */
+class TerrestrialMagnetismStream : virtual public Stream<TerrestrialMagnetismData const &>{
+public:
+
+    virtual ~TerrestrialMagnetismStream() {}
+};
+
+/**
+ * @brief A class to handle external stream data. Only support in Arm now.
+ */
+class ExternalStream : virtual public Stream<xv::Pose const &>{
+public:
+
+   virtual int  registerRawCallback( std::function<void (xv::ExternalData const &)> rawExternalCallback) = 0;
+   virtual bool unregisterRawCallback( int callbackId ) = 0;
+
+   virtual int  registerFixedPoseCallback( std::function<void (xv::Pose const &)> fixedExternalCallback) = 0;
+   virtual bool unregisterFixedPoseCallback( int callbackId ) = 0;
+
+   virtual int registerRuntimePoseCallback( std::function<void (xv::Pose const&)> runtimeExternalCallback) = 0;
+   virtual bool unregisterRuntimePoseCallback(int callbackId) = 0;
+
+   virtual int registerScaledPoseCallback( std::function<void (xv::Pose const&)> scaledExternalCallback) = 0;
+   virtual bool unregisterScaledPoseCallback(int callbackId) = 0;
+
+   virtual bool getPose(Pose& pose) = 0;
+
+   virtual void SetScaleArrayRange(int range) = 0;
+   virtual void setScaleRange(double low, double high) = 0;
+
+   virtual Vector3d rotationToEuler(Matrix3d const& rot) = 0;
+
+   virtual void setResetStatus(bool status) = 0;
+   virtual void setDeviceStopStatus(bool status) = 0;
+
+   virtual void setTransform(const xv::Transform& transform) = 0;
+
+   virtual void resumeLastPose(xv::Pose pose) = 0;
+
+   virtual ~ExternalStream() {}
 };
 
 /**
@@ -1079,6 +1279,63 @@ public:
     virtual ~DeviceStatusStream(){}
 };
 
+class WirelessController
+{
+public:
+    WirelessController(){}
+    
+    virtual ~WirelessController(){}
+    
+    virtual void start() = 0;
+    
+    virtual void stop() = 0;
+    
+    virtual int registerWirelessControllerDataCallback(std::function<void (const WirelessControllerData&)> poseCallback) = 0;
+
+    virtual bool unregisterWirelessControllerDataCallback( int callbackID ) = 0;
+
+    virtual void scanBleDevices(std::function<void(std::map<std::string,std::string>)> scanCallback) = 0;
+
+    virtual bool connectBleDevice(const std::string& name, const std::string& macAddr) = 0;
+
+    virtual bool disconnectBleDevice(const std::string& name, const std::string& macAddr) = 0;
+    
+    virtual bool pairingLeftWirelessController(const std::string& name, const std::string&macAddr) = 0;
+
+    virtual void pairingLeftWirelessController(std::function<void (bool result)> resultCallback) = 0;
+
+    virtual bool pairingRightWirelessController(const std::string& name, const std::string&macAddr) = 0;
+    
+    virtual void pairingRightWirelessController(std::function<void (bool result)> resultCallback) = 0;
+
+    virtual void setSerialPointName(const std::string& serialName) = 0;
+
+    virtual bool uploadMap(const std::string& mapName, WirelessControllerDataType type,std::function<void (bool)> const &callback) = 0;
+
+    virtual void controlTest(bool enable, const WirelessControllerDataType& type,  std::function<void (float, WirelessControllerDataType)> const &callback = nullptr) = 0;
+    
+    virtual void putSharedMap(const std::vector<uint8_t>& buffer) = 0;
+
+    virtual void putFirstSharedMap(const std::vector<uint8_t>& buffer) = 0;
+
+    virtual bool changeSlamType(const WirelessControllerSlamType slamType, const WirelessControllerDataType deviceType) = 0;
+
+    virtual void enableHeartBeat(bool enable) = 0;
+
+    virtual bool registerSlam(const std::shared_ptr<Slam>& slam) = 0;
+
+    virtual WirelessControllerSlamType getSlamType(const WirelessControllerDataType deviceType) = 0;
+
+    virtual int registerWirelessControllerStateCallback(std::function<void (const WirelessControllerState &state)> callback) = 0;
+
+    virtual bool unregisterWirelessControllerStateCallback( int callbackID ) = 0;
+
+    virtual int testTransmissionTime(WirelessControllerDataType type) = 0;
+
+    virtual void getWirelessControllerDeviceInformation(WirelessControllerDeviceInformation& information, const WirelessControllerDataType& deviceType) = 0;
+    
+    virtual void controlControllerVibration(int time, bool enable, const WirelessControllerDataType& deviceType) = 0;
+};
 
 /**
  * @brief Class to get tracking results and raw outputs with a connected device.
@@ -1154,6 +1411,11 @@ public:
     virtual std::shared_ptr<ThermalCamera> thermalCamera() = 0;
 
     /**
+     * @brief Get the ir tracking camera component of the device.
+     */
+    virtual std::shared_ptr<IrTrackingCamera> irTrackingCamera() = 0;
+    
+    /**
      * @brief Get the eyetracking component of the device.
      */
     virtual std::shared_ptr<EyetrackingCamera> eyetracking() = 0;
@@ -1163,12 +1425,15 @@ public:
      */
     virtual std::shared_ptr<GazeStream> gaze() = 0;
 
+    /**
+     * @brief Get the iris data of the device.
+     */
+    virtual std::shared_ptr<IrisStream> iris() = 0;
+
    /**
      * @brief Get the gesture component.
      */
     virtual std::shared_ptr<GestureStream> gesture() = 0;
-
-    virtual std::shared_ptr<GestureStreamEX> gestureEX() = 0;
 
     /**
      * @brief Get the GPS data of the device.
@@ -1179,6 +1444,16 @@ public:
      * @brief Get the GPS distance data of the device.
      */
     virtual std::shared_ptr<GPSDistanceStream> gpsDistanceModule() = 0;
+
+    /**
+     * @brief Get the terrestrial magnetism data of the device.
+     */
+    virtual std::shared_ptr<TerrestrialMagnetismStream> terrestrialMagnetismModule() = 0;
+
+    /**
+     * @brief Get the external stream component.
+     */
+    virtual std::shared_ptr<ExternalStream> externalSensor() = 0;
 
     /**
      * @brief Get the MIC component of the device.
@@ -1201,9 +1476,21 @@ public:
     virtual std::shared_ptr<ObjectDetector> objectDetector() = 0;
 
     /**
+     * @brief Get the object detection component. in RKNN3588 platform
+     */
+    virtual std::shared_ptr<ObjectDetectorRKNN3588> objectDetectorRKNN3588() = 0;
+
+    /**
      * @brief Get the device status component.
      */
     virtual std::shared_ptr<DeviceStatusStream> deviceStatus() = 0;
+
+        /**
+     * @brief Get the device wireless controller.
+     */
+    virtual std::shared_ptr<WirelessController> wirelessController() = 0;
+
+    virtual std::shared_ptr<BeiDouGPS> beiDouGPS() = 0;
 
     /**
      * @brief Let device sleep.
@@ -1676,6 +1963,15 @@ Version version();
  * @return A map with key corresponding to device ID and the value is a #Device.
  */
 std::map<std::string,std::shared_ptr<Device>> getDevices(double timeOut = 0., const std::string& desc = "", bool* stopWaiting = nullptr, xv::SlamStartMode slamStartMode = xv::SlamStartMode::Normal, xv::DeviceSupport deviceSupport = xv::DeviceSupport ::ONLYUSB);
+
+/**
+ * @brief Retrieve all the detected XVisio devices.
+ * If no device is found after the timeout is reached, the result will be empty.
+ * @param timeOut : wait until the timeout is reached.
+ * @param desc : Load device according to feature in desc(json string). SDK can choose device feature from desc accoring SN or hardware version. The desc also contains default values of slam algorithm(old SDK is INI file).
+ * @return A map with key corresponding to device ID and the value is a #Device.
+ */
+std::map<std::string,std::shared_ptr<Device>> getDevicesUntilTimeout(double timeOut = 0., const std::string& desc = "", xv::SlamStartMode slamStartMode = xv::SlamStartMode::Normal, xv::DeviceSupport deviceSupport = xv::DeviceSupport ::ONLYUSB);
 
 /**
  * @brief Change the log level.

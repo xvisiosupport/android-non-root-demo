@@ -78,6 +78,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga7a7e38fd3ed94aab311fbc1ce5bd7693"><td class="memItemLeft" align="right" valign="top">std::map&lt; std::string, std::shared_ptr&lt; <a class="el" href="classxv_1_1Device.html">Device</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__functions.html#ga7a7e38fd3ed94aab311fbc1ce5bd7693">xv::getDevices</a> (double timeOut=0., const std::string &amp;desc=&quot;&quot;, bool *stopWaiting=nullptr, xv::SlamStartMode slamStartMode=xv::SlamStartMode::Normal, xv::DeviceSupport deviceSupport=xv::DeviceSupport ::ONLYUSB)</td></tr>
 <tr class="memdesc:ga7a7e38fd3ed94aab311fbc1ce5bd7693"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve all the detected XVisio devices. If no device is found after the timeout is reached, the result will be empty.  <a href="group__xv__functions.html#ga7a7e38fd3ed94aab311fbc1ce5bd7693">More...</a><br /></td></tr>
 <tr class="separator:ga7a7e38fd3ed94aab311fbc1ce5bd7693"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gadbaa7de58501dfe0ff2e5eb0f96ebb43"><td class="memItemLeft" align="right" valign="top">std::map&lt; std::string, std::shared_ptr&lt; <a class="el" href="classxv_1_1Device.html">Device</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__functions.html#gadbaa7de58501dfe0ff2e5eb0f96ebb43">xv::getDevicesUntilTimeout</a> (double timeOut=0., const std::string &amp;desc=&quot;&quot;, xv::SlamStartMode slamStartMode=xv::SlamStartMode::Normal, xv::DeviceSupport deviceSupport=xv::DeviceSupport ::ONLYUSB)</td></tr>
+<tr class="memdesc:gadbaa7de58501dfe0ff2e5eb0f96ebb43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve all the detected XVisio devices. If no device is found after the timeout is reached, the result will be empty.  <a href="group__xv__functions.html#gadbaa7de58501dfe0ff2e5eb0f96ebb43">More...</a><br /></td></tr>
+<tr class="separator:gadbaa7de58501dfe0ff2e5eb0f96ebb43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga32fe1b6690843af286b55a88691c10fa"><td class="memItemLeft" align="right" valign="top"><a id="ga32fe1b6690843af286b55a88691c10fa"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xv__functions.html#ga32fe1b6690843af286b55a88691c10fa">xv::setLogLevel</a> (LogLevel l)</td></tr>
 <tr class="memdesc:ga32fe1b6690843af286b55a88691c10fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Change the log level. <br /></td></tr>
@@ -141,6 +144,56 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
   <table class="params">
     <tr><td class="paramname">timeOut</td><td>: wait until the timeout is reached or find at least one device. </td></tr>
     <tr><td class="paramname">stopWaiting</td><td>: stop scanning when become true. </td></tr>
+    <tr><td class="paramname">desc</td><td>: Load device according to feature in desc(json string). SDK can choose device feature from desc accoring SN or hardware version. The desc also contains default values of slam algorithm(old SDK is INI file). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A map with key corresponding to device ID and the value is a #Device. </dd></dl>
+
+</div>
+</div>
+<a id="gadbaa7de58501dfe0ff2e5eb0f96ebb43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gadbaa7de58501dfe0ff2e5eb0f96ebb43">&#9670;&nbsp;</a></span>getDevicesUntilTimeout()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::map&lt;std::string,std::shared_ptr&lt;<a class="el" href="classxv_1_1Device.html">Device</a>&gt; &gt; xv::getDevicesUntilTimeout </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>timeOut</em> = <code>0.</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>desc</em> = <code>&quot;&quot;</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">xv::SlamStartMode&#160;</td>
+          <td class="paramname"><em>slamStartMode</em> = <code>xv::SlamStartMode::Normal</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">xv::DeviceSupport&#160;</td>
+          <td class="paramname"><em>deviceSupport</em> = <code>xv::DeviceSupport&#160;::ONLYUSB</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieve all the detected XVisio devices. If no device is found after the timeout is reached, the result will be empty. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">timeOut</td><td>: wait until the timeout is reached. </td></tr>
     <tr><td class="paramname">desc</td><td>: Load device according to feature in desc(json string). SDK can choose device feature from desc accoring SN or hardware version. The desc also contains default values of slam algorithm(old SDK is INI file). </td></tr>
   </table>
   </dd>

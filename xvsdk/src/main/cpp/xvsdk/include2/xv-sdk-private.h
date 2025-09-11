@@ -13,6 +13,11 @@
 #define DLL_API
 #endif
 
+namespace x
+{
+    struct ImuCalibration;
+}
+
 namespace xv {
 
 /**
@@ -159,86 +164,44 @@ public:
     virtual bool addTags(std::vector<TagInfo> const& v);
     virtual bool onTagUpdate(std::function<void(std::string const& tagId, xv::Transform const& pose, double const& tagSize)>);
 
+    virtual int registerSharedMapCallback(std::function<void (std::vector<uint8_t> const& buffer)> );
+    virtual bool unregisterSharedMapCallback(int callbackId);
+    
+    virtual const std::vector<uint8_t>& getFirstSharedMap();
     virtual ~SlamBase();
 
 };
 
+
 class ImuSensorCalibration {
 
-    // gyro corrected = m_gyroScaleInv * (gyro - gyroBias)
-    // accel corrected = m_accelScaleInv * (gyro - accelBias)
-
-    double m_temperature; // Temperature of the calibration parameters (in K)
-    xv::Vector3d m_gyroBias; // gyrometer bias (in bits or rad/s)
-    xv::Vector3d m_accelBias; // accelerometer bias (in bits or g)
-    xv::Matrix3d m_gyroScaleInv;
-    xv::Matrix3d m_accelScaleInv;
-
-private:
-
-    void apply(xv::Vector3d &x, xv::Vector3d bias, xv::Matrix3d scaleInv) {
-        Vector3d xx = x;
-        for (std::size_t i=0; i<3; ++i)
-            xx[i] -= bias[i];
-        for (std::size_t i=0; i<3; ++i)
-            x[i] = scaleInv[0+i*3]*xx[0] + scaleInv[1+i*3]*xx[1] + scaleInv[2+i*3]*xx[2];
-    }
+    std::shared_ptr<x::ImuCalibration> model;
 
 public:
 
-    ImuSensorCalibration() {
-        setGyroScale({1.,1.,1.});
-        setAccelScale({1.,1.,1.});
-    }
-    ImuSensorCalibration(double temperature, xv::Vector3d const& gyroBias, xv::Vector3d const& accelBias, xv::Vector3d const& gyroScale={1.,1,1}, xv::Vector3d const& accelScale={1.,1,1})
-        : m_temperature(temperature), m_gyroBias(gyroBias), m_accelBias(accelBias) {
-        setGyroScale(gyroScale);
-        setAccelScale(accelScale);
-    }
+    ImuSensorCalibration();
 
-    double temperature() const {return m_temperature;}
-    void setTemperature(double t) { m_temperature = t; }
+    // check if the calibration is initialized
+    operator bool() const { return model.get()!=nullptr;}
 
-    xv::Vector3d const& gyroBias() const { return m_gyroBias; }
-    void setGyroBias(xv::Vector3d const& b) { m_gyroBias = b; }
-    xv::Matrix3d const& gyroScaleInv() const { return m_gyroScaleInv; }
-    void setGyroScale(double scale) {
-        setGyroScale({scale,scale,scale});
-    }
-    void setGyroScale(xv::Vector3d scale) {
-        m_gyroScaleInv = {
-            1./scale[0], 0, 0,
-            0, 1./scale[1], 0,
-            0, 0, 1./scale[2]
-        };
-    }
-    void setGyroScaleInv(xv::Matrix3d scaleInv) {
-        m_gyroScaleInv = scaleInv;
-    }
+    std::shared_ptr<x::ImuCalibration> calibration() const { return model; }
 
-    xv::Vector3d const& accelBias() const { return m_accelBias; }
-    void setAccelBias(xv::Vector3d const& b) { m_accelBias = b; }
-    xv::Matrix3d const& accelScaleInv() const { return m_accelScaleInv; }
-    void setAccelScale(double scale) {
-        setAccelScale({scale,scale,scale});
-    }
-    void setAccelScale(xv::Vector3d scale) {
-        m_accelScaleInv = {
-            1./scale[0], 0, 0,
-            0, 1./scale[1], 0,
-            0, 0, 1./scale[2]
-        };
-    }
-    void setAccelScaleInv(xv::Matrix3d scaleInv) {
-        m_accelScaleInv = scaleInv;
-    }
+    void setCalibration(std::shared_ptr<x::ImuCalibration> ptr) { model = ptr; }
 
-    void apply(Imu& imu) {
-        apply(imu.gyro, m_gyroBias, m_gyroScaleInv);
-        apply(imu.accel, m_accelBias, m_accelScaleInv);
-    }
+    // Create from buffer
+    ImuSensorCalibration(std::vector<int8_t> const& buffer);
 
+    // Export to buffer
+    std::vector<int8_t> buffer() const;
+    
+    // Export/display to text
+    std::ostream& disp(std::ostream& o) const;// for text
+
+    // Apply calibration to IMU data
+    void apply(Imu& imu);
 };
+
+
 
 class DevicePrivate : virtual public DeviceEx {
 
@@ -249,132 +212,6 @@ private :
    std::shared_ptr<SlamBase> m_slamEdgeLocHostMap;
 
    std::string m_calibrationFilePath = "/sdcard/";
-
-   const std::string m_ImuJson = R"(
-    {
-        "temperature": 0.0,
-        "accelBiasX": 0.0,
-        "accelBiasY": 0.0,
-        "accelBiasZ": 0.0,
-        "gyroBiasX": 0.0,
-        "gyroBiasY": 0.0,
-        "gyroBiasZ": 0.0,
-        "accelScaleInv0": 0.0,
-        "accelScaleInv1": 0.0,
-        "accelScaleInv2": 0.0,
-        "accelScaleInv3": 0.0,
-        "accelScaleInv4": 0.0,
-        "accelScaleInv5": 0.0,
-        "accelScaleInv6": 0.0,
-        "accelScaleInv7": 0.0,
-        "accelScaleInv8": 0.0,
-        "gyroScaleInv0": 0.0,
-        "gyroScaleInv1": 0.0,
-        "gyroScaleInv2": 0.0,
-        "gyroScaleInv3": 0.0,
-        "gyroScaleInv4": 0.0,
-        "gyroScaleInv5": 0.0,
-        "gyroScaleInv6": 0.0,
-        "gyroScaleInv7": 0.0,
-        "gyroScaleInv8": 0.0
-    }
-    )";
-
-    const std::string m_FisheyeJson_ucm = R"(
-    {
-        "timestampoffset": 0.0,
-        "leftucmw": 0,
-        "leftucmh": 0,
-        "leftucmfx": 0.0,
-        "leftucmfy": 0.0,
-        "leftucmu0": 0.0,
-        "leftucmv0": 0.0,
-        "leftucmxi": 0.0,
-        "lefttranslation": [],
-        "leftrotation": [],
-        "rightucmw": 0,
-        "rightucmh": 0,
-        "rightucmfx": 0.0,
-        "rightucmfy": 0.0,
-        "rightucmu0": 0.0,
-        "rightucmv0": 0.0,
-        "rightucmxi": 0.0,
-        "righttranslation": [],
-        "rightrotation": [],
-        "left2ucmw": 0,
-        "left2ucmh": 0,
-        "left2ucmfx": 0.0,
-        "left2ucmfy": 0.0,
-        "left2ucmu0": 0.0,
-        "left2ucmv0": 0.0,
-        "left2ucmxi": 0.0,
-        "left2translation": [],
-        "left2rotation": [],
-        "right2ucmw": 0,
-        "right2ucmh": 0,
-        "right2ucmfx": 0.0,
-        "right2ucmfy": 0.0,
-        "right2ucmu0": 0.0,
-        "right2ucmv0": 0.0,
-        "right2ucmxi": 0.0,
-        "right2translation": [],
-        "right2rotation": []
-    }
-    )";
-
-    const std::string m_FisheyeJson_seucm = R"(
-    {
-        "timestampoffset": 0.0,
-        "leftseucmw": 0,
-        "leftseucmh": 0,
-        "leftseucmfx": 0.0,
-        "leftseucmfy": 0.0,
-        "leftseucmu0": 0.0,
-        "leftseucmv0": 0.0,
-        "leftseucmeu": 0.0,
-        "leftseucmev": 0.0,
-        "leftseucmalpha": 0.0,
-        "leftseucmbeta": 0.0,
-        "lefttranslation": [],
-        "leftrotation": [],
-        "rightseucmw": 0,
-        "rightseucmh": 0,
-        "rightseucmfx": 0.0,
-        "rightseucmfy": 0.0,
-        "rightseucmu0": 0.0,
-        "rightseucmv0": 0.0,
-        "rightseucmeu": 0.0,
-        "rightseucmev": 0.0,
-        "rightseucmalpha": 0.0,
-        "rightseucmbeta": 0.0,
-        "righttranslation": [],
-        "rightrotation": [],
-        "left2seucmw": 0,
-        "left2seucmh": 0,
-        "left2seucmfx": 0.0,
-        "left2seucmfy": 0.0,
-        "left2seucmu0": 0.0,
-        "left2seucmv0": 0.0,
-        "left2seucmeu": 0.0,
-        "left2seucmev": 0.0,
-        "left2seucmalpha": 0.0,
-        "left2seucmbeta": 0.0,
-        "left2translation": [],
-        "left2rotation": [],
-        "right2seucmw": 0,
-        "right2seucmh": 0,
-        "right2seucmfx": 0.0,
-        "right2seucmfy": 0.0,
-        "right2seucmu0": 0.0,
-        "right2seucmv0": 0.0,
-        "right2seucmeu": 0.0,
-        "right2seucmev": 0.0,
-        "right2seucmalpha": 0.0,
-        "right2seucmbeta": 0.0,
-        "right2translation": [],
-        "right2rotation": []
-    }
-    )";
 
 public:
 
@@ -395,6 +232,7 @@ public:
    // setXXXCalibration : only set the current calibration
    // writeXXXCalibration : set the current calibration and write the calibration on device
 
+   void setCalibrationPath(std::string path) { m_calibrationFilePath = path; }
    virtual bool getImuCalibration(ImuSensorCalibration&) {return false; }
    virtual bool setImuCalibration(const ImuSensorCalibration&) {return false;}
    virtual bool writeImuCalibration(const ImuSensorCalibration&) {return false;}
@@ -402,6 +240,7 @@ public:
    virtual bool writeDisplayCalibration(const std::vector<CalibrationEx>&) { return false; }
    
    virtual bool writeRgbCalibration(const std::vector<CalibrationEx>&) { return false; }
+   virtual bool writeRgb2Calibration(const std::vector<CalibrationEx>&) { return false; }
    virtual bool writeTofCalibration(const std::vector<CalibrationEx>&) { return false; }
 
    virtual bool setTofIrEnabled(bool enabled) {return false; }
@@ -415,6 +254,10 @@ public:
    virtual bool getImuCalibrationFromFile(ImuSensorCalibration& imuCalib);
    virtual bool writeFisheyeCalibrationToFile(const std::vector<CalibrationEx>& fisheyeCalib, double imuFisheyeTimestampOffset);
    virtual bool getFisheyeCalibrationFromFile(std::vector<CalibrationEx>& fisheyeCalib, double& imuFisheyeTimestampOffset);
+
+    virtual bool writeThermalCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
+    virtual bool writeIrTrackingCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
+    virtual bool writeIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&){ return false;}
 
    /**
     * @brief Provide a SLAM without IMU data.
@@ -431,7 +274,11 @@ public:
                          bool surfaceMultiResolutionMesh=false,
                          bool surfaceMobileObjects=false,
                          bool surfaceUseFisheyes=false,
-                         bool surfaceUseFisheyeTexturing=false);
+                         bool surfaceUseFisheyeTexturing=false,
+                         double surfaceMinVoxelSize=.1,
+                         double surfaceNearDepthLimit=-1.,
+                         double surfaceFarDepthLimit=-1.,
+                         int surfacePointCloudDecimationFactor=1);
 
    /**
     * @brief Provide a SLAM only on host (only use IMU and fisheye images from the device).
@@ -540,5 +387,42 @@ private:
     void initPdcm(std::vector<xv::Calibration> const& calib);
     void init(const std::vector<std::pair<xv::Transform,std::shared_ptr<xv::CameraModel>>> &calib);
 };
+
+class RgbRectificationMesh {
+    ImageWarpMesh mesh;
+
+public:
+    RgbRectificationMesh(std::vector<xv::Calibration> const& calib, std::size_t w, std::size_t h);
+    // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, bool useUcm=true);
+    // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, double focal, double baseline);
+    // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, std::vector<xv::Calibration> const& displayCalib);
+
+    xv::RgbImage rectify(const xv::ColorImage &img) const;
+
+    // double disparityToDepth(double disparity) const;
+
+    static xv::RgbImage applyMesh(xv::ColorImage const& img, ImageWarpMesh const& mesh);
+    // static std::pair<ImageWarpMesh, ImageWarpMesh> initInverse(const std::vector<xv::Calibration> &calib);
+
+    // double focal() const;
+    // double baseline() const;
+
+    // xv::Transform const& leftVirtualPose() const;
+    // xv::Transform const& rightVirtualPose() const;
+
+    // ImageWarpMesh const& leftWarp() const;
+    // ImageWarpMesh const& rightWarp() const;
+
+private:
+    // double m_baseline = -1e9;
+    double m_focal = -1e9;
+    xv::Transform m_P1;
+    // xv::Transform m_P2;
+    // void init(std::vector<xv::Calibration> const& calib);
+    // void init(const std::vector<xv::Calibration> &calib, const std::vector<xv::Calibration> &displayCalib);
+    // void initPdcm(std::vector<xv::Calibration> const& calib);
+    void init(const std::vector<std::pair<xv::Transform,std::shared_ptr<xv::CameraModel>>> &calib);
+};
+
 
 }

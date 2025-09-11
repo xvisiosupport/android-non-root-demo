@@ -130,12 +130,22 @@ Public Types</h2></td></tr>
 <b>Sony</b>
  }</td></tr>
 <tr class="separator:aeab3615e4d24184797aac545048bba27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec2d55195399b407687986a3b2a8ec8a"><td class="memItemLeft" align="right" valign="top"><a id="aec2d55195399b407687986a3b2a8ec8a"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>ColorDepthBase</b> { <b>RGB</b> = 0, 
+<b>TOF</b> = 1
+ }</td></tr>
+<tr class="separator:aec2d55195399b407687986a3b2a8ec8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2229ca44476d0c343116f45bb832ed30"><td class="memItemLeft" align="right" valign="top"><a id="a2229ca44476d0c343116f45bb832ed30"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class="el" href="structxv_1_1DepthImage.html">DepthImage</a> const &amp;</td></tr>
 <tr class="separator:a2229ca44476d0c343116f45bb832ed30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:abf1ed6c1f5e59bd5a3ec0641e0c49146"><td class="memItemLeft" align="right" valign="top"><a id="abf1ed6c1f5e59bd5a3ec0641e0c49146"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setColorDepthBase</b> (ColorDepthBase base)=0</td></tr>
+<tr class="separator:abf1ed6c1f5e59bd5a3ec0641e0c49146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ed6e1cb71e0cdf35a51a59d4caecc28"><td class="memItemLeft" align="right" valign="top"><a id="a8ed6e1cb71e0cdf35a51a59d4caecc28"></a>
+virtual ColorDepthBase&#160;</td><td class="memItemRight" valign="bottom"><b>getColoerDepthBase</b> ()=0</td></tr>
+<tr class="separator:a8ed6e1cb71e0cdf35a51a59d4caecc28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ffb7904edee69e6894895e655a76f14"><td class="memItemLeft" align="right" valign="top"><a id="a5ffb7904edee69e6894895e655a76f14"></a>
 virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#a5ffb7904edee69e6894895e655a76f14">registerColorDepthImageCallback</a> (std::function&lt; void(const <a class="el" href="structxv_1_1DepthColorImage.html">DepthColorImage</a> &amp;)&gt;)=0</td></tr>
 <tr class="memdesc:a5ffb7904edee69e6894895e655a76f14"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gives access to composed image with RBG color on depth images. <br /></td></tr>
@@ -184,10 +194,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setTofIrGamma
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#af6da76eeb5958bd0d1f88cb013bd554d">setFilterFile</a> (std::string filePath)=0</td></tr>
 <tr class="memdesc:af6da76eeb5958bd0d1f88cb013bd554d"><td class="mdescLeft">&#160;</td><td class="mdescRight">set SonyTof filter file <br /></td></tr>
 <tr class="separator:af6da76eeb5958bd0d1f88cb013bd554d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="memItemLeft" align="right" valign="top"><a id="ac2901423b7c9c9ed9d6aac76bcd488c8"></a>
-virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1TofCamera.html#ac2901423b7c9c9ed9d6aac76bcd488c8">checkColorDepthImageSupport</a> ()=0</td></tr>
-<tr class="memdesc:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">check if support color depth image <br /></td></tr>
-<tr class="separator:ac2901423b7c9c9ed9d6aac76bcd488c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a786663aacdbda6f1ce67833d62377d11"><td class="memItemLeft" align="right" valign="top"><a id="a786663aacdbda6f1ce67833d62377d11"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>enableIrGamma</b> (bool enable)=0</td></tr>
+<tr class="separator:a786663aacdbda6f1ce67833d62377d11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6a2c6b67477c3f4241cf2aa634f2ba8"><td class="memItemLeft" align="right" valign="top"><a id="af6a2c6b67477c3f4241cf2aa634f2ba8"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>isEnableIrGamma</b> ()=0</td></tr>
+<tr class="separator:af6a2c6b67477c3f4241cf2aa634f2ba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -519,7 +531,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setFramerate<
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/blues/sdk/xvsdk-0519/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

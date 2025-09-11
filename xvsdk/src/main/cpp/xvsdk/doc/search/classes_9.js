@@ -1,8 +1,4 @@
 var searchData=
 [
-  ['object_338',['Object',['../structxv_1_1Object.html',1,'xv']]],
-  ['objectdescriptor_339',['ObjectDescriptor',['../structxv_1_1ObjectDescriptor.html',1,'xv']]],
-  ['objectdetector_340',['ObjectDetector',['../classxv_1_1ObjectDetector.html',1,'xv']]],
-  ['orientation_341',['Orientation',['../classxv_1_1Orientation.html',1,'xv']]],
-  ['orientationstream_342',['OrientationStream',['../classxv_1_1OrientationStream.html',1,'xv']]]
+  ['keypoint_407',['keypoint',['../structxv_1_1Object_1_1keypoint.html',1,'xv::Object::keypoint'],['../structxv_1_1Det2dObject_1_1keypoint.html',1,'xv::Det2dObject::keypoint'],['../structxv_1_1keypoint.html',1,'xv::keypoint']]]
 ];

@@ -75,20 +75,17 @@ struct SpecialUnifiedCameraModel
    */
   double eu;
   /**
-   * @brief Optical center of distortion in width direction (in pixel)
+   * @brief Optical center of distortion in height direction (in pixel)
    */
   double ev;
   /**
-   * @brief Optical center of distortion in height direction (in pixel)
+   * @brief alpha
    */
   double alpha;
   /**
-   * @brief alpha
-   */
-  double beta;
-  /**
    * @brief beta
    */
+  double beta;
 };
 
 
@@ -124,6 +121,18 @@ struct FisheyeKeyPoints {
      */
     std::size_t descriptorSize() const { return DESC_SIZE; }
 };
+
+
+/**
+ * Images and features in same structure for convenience
+ */
+struct Frames
+{
+  FisheyeImages images;// images
+  FisheyeKeyPoints<2,32> keypoints2;// keypoints when images.size()==2
+  FisheyeKeyPoints<4,32> keypoints4;// keypoints when images.size()==4
+};
+
 
 #if 0
 struct FisheyeKeyPointsDescriptor {
@@ -183,6 +192,20 @@ public:
     virtual ~HandleImuSensor(){}
 };
 
+class RGB_L_ThermalFusionStream : virtual public Stream<ColorImage const &> {
+public:
+    virtual bool readRGBThermalFusionParams(std::array<float, 3>& buffer) = 0;
+    virtual bool writeRGBThermalFusionParams(std::array<float, 3>& buffer) = 0;
+    virtual ~RGB_L_ThermalFusionStream(){}
+};
+
+class RGB_R_ThermalFusionStream : virtual public Stream<ColorImage const &> {
+public:
+    virtual bool readRGBThermalFusionParams(std::array<float, 3>& buffer) = 0;
+    virtual bool writeRGBThermalFusionParams(std::array<float, 3>& buffer) = 0;
+    virtual ~RGB_R_ThermalFusionStream(){}
+};
+
 
 /**
  * @brief For senior developer.
@@ -200,6 +223,9 @@ public:
 
     virtual std::shared_ptr<HandleImuSensor> handleImuSensor() = 0;
     virtual std::shared_ptr<FisheyeCameras> handleFisheyeCameras() = 0;
+
+    virtual std::shared_ptr<RGB_L_ThermalFusionStream> RGB_L_ThermalFusionCamera() = 0;
+    virtual std::shared_ptr<RGB_R_ThermalFusionStream> RGB_R_ThermalFusionCamera() = 0;
 
     /**
      * @brief Start use external IMU.
@@ -241,10 +267,15 @@ public:
 
     virtual bool setDisplayCalibration(const std::vector<CalibrationEx>&) = 0;
     virtual bool setRgbCalibration(const std::vector<CalibrationEx>&) = 0;
+    virtual bool setRgb2Calibration(const std::vector<CalibrationEx>&) = 0;
     virtual bool setTofCalibration(const std::vector<CalibrationEx>&) = 0;
     virtual bool getFisheyeCalibration(std::vector<CalibrationEx>&, double& imuFisheyeTimestampOffset) = 0;
     virtual bool setFisheyeCalibration(const std::vector<CalibrationEx>&, double imuFisheyeTimestampOffset) = 0;
-    virtual bool setEyetrackingCalibration(const std::vector<CalibrationEx>&) = 0;
+    virtual bool setEyetrackingCalibration(const std::vector<Calibration>&) = 0;
+    virtual bool setThermalCalibration(const std::vector<CalibrationEx>&) = 0;
+
+    virtual bool setIrTrackingCameraCalibration(const std::vector<CalibrationEx>&) = 0;
+    virtual bool setIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&) = 0;
 
     virtual bool setImuOffset( int offset ) = 0;
     virtual bool setImuMode( int mode ) = 0;
@@ -271,7 +302,12 @@ public:
 
     virtual void setDeviceOffsetStatus() = 0;
 
-
+    /**
+     * @brief Push external data stream into SDK.
+     */
+    virtual void pushExternalData(ExternalData &externalData) = 0;
+    virtual void pushExternalData(ExternalData &externalData, Pose &posXvisio) = 0;
+    
     virtual ~DeviceEx() { }
 };
 
@@ -312,7 +348,190 @@ struct TagDetection {
     double confidence; // in [0,1]
 };
 
-class AprilTagDetector {
+class TagDetector {
+public:
+
+    /**
+     * @brief Detect AprilTags in Fisheye Images and return the poses of the tags
+     * @param tagSize : of the side of the april tag to detect (in m)
+     * @return vector of pairs with tag id and pose of the tag
+     */
+    virtual std::vector<TagPose> detect(xv::FisheyeImages const& fe, double tagSize) = 0;
+
+    /**
+     * @brief Detect AprilTags in a grayscale image and return the poses of the tags
+     * @param tagSize : of the side of the april tag to detect (in m)
+     * @return vector of pairs with tag id and pose of the tag
+     */
+    virtual std::vector<TagPose> detect(xv::GrayScaleImage const& im, double tagSize) = 0;
+
+    /**
+     * @brief Detect AprilTags in a grayscale image and return the 4 corners of each detected tag
+     * @return vector of pairs with tag id and 4 corners of the tag (in pxl)
+     */
+    virtual std::vector<TagDetection> detect(const xv::GrayScaleImage& fe) = 0;
+
+    /**
+     * @brief Compute the poses of the tags detections
+     * @param detections: tag detections
+     * @param tagSize: size of the tag (in m)
+     * @return the tag poses
+     */
+    virtual std::vector<TagPose> detectionsToPoses(const std::vector<TagDetection>& detections, double tagSize) = 0;
+
+    /**
+     * @brief Detect AprilTags in a multiple cameras system and return the 4 corners of each detected tag
+     * @return map of detections by tag id, each vector of tag detection has the size of the number of images
+     */
+    virtual std::map<int, std::vector<TagDetection> > detect(const xv::FisheyeImages &fe) = 0;
+    /**
+     * @brief Compute the poses of the tags detections for multiple cameras case
+     * @param detections: tag detections grouped by tagId, each vector of tag detection has the size of the number of images
+     * @param tagSize: size of the tag (in m)
+     * @return the tag poses
+     */
+    virtual std::vector<TagPose> detectionsToPoses(const std::map<int, std::vector<TagDetection> > &detectionsByTagId, double tagSize) = 0;
+
+
+    /**
+     * @brief Start a tag detectors
+     * @param slam : SLAM to use for localisation of the tag. The detected tags will be in world frame coordinates as defined by the SLAM.
+     * @param tagFamily : depends on the detector type
+     * @param size : size in m of the real tag side
+     * @param refreshRate : the refresh rate used for the detection (in Hz)
+     * @return Id of the started detector.
+     */
+    static std::string startTagDetector(std::shared_ptr<xv::FisheyeCameras>, std::shared_ptr<Slam> slam, std::string const& tagFamily, double size, double refreshRate);
+    /**
+     * @brief Start a tag detectors
+     * @param slam : SLAM to use for localisation of the tag. The detected tags will be in world frame coordinates as defined by the SLAM.
+     * @param tagFamily : depends on the detector type
+     * @param size : size in m of the real tag side
+     * @param refreshRate : the refresh rate used for the detection (in Hz)
+     * @return Id of the started detector.
+     */
+    static std::string startTagDetector(std::shared_ptr<xv::ColorCamera>, std::shared_ptr<Slam> slam, std::string const& tagFamily, double size, double refreshRate);
+
+    /**
+     * @brief Stop a tag detector.
+     * @param detectorId : detector id (see output of #startTagDetector)
+     * @return True if succeeded to stop the detector.
+     */
+    static bool stopTagDetector(std::string const& detectorId);
+    /**
+     * @brief Get the current localized tag detections in SLAM world frame coordinates.
+     *
+     * @param detectorId : detector id
+     * @return Poses of all the detected tags, even if the tag is not visible, if it was once detected it remains in this output map.
+     */
+    static std::map<int,xv::Pose> getTagDetections(std::string const& detectorId);
+
+
+    /**
+     * @brief In case of QR code detector, get QR code text corresponding the id of the xv::TagDetection
+     * @param detectorId : detector id
+     * @param id : int identifier of the TagDetection to query
+     * @return the QR code text encoded in the TagDetection with id
+     */
+    static std::string getCode(std::string const& detectorId, int id);
+
+};
+
+class QrCodeDetectorImpl;
+
+class QrCodeDetector : public TagDetector {
+public:
+    /**
+     * @brief Construct an AprilTag detector
+     * @param c multi camera calibration
+     * @param f name of the QR family to use (not used for now)
+     */
+    explicit QrCodeDetector(std::vector<xv::CalibrationEx> const& c, std::string const& f="", bool subpixelic=false);
+
+    /**
+     * @brief Construct an AprilTag detector on single view
+     * @param c camera intrinsics
+     * @param camerPose camera pose
+     * @param f name of the QR family to use (not used for now)
+     */
+    explicit QrCodeDetector(xv::PolynomialDistortionCameraModel const& c, xv::Transform const& camerPose, std::string const& f="", bool subpixelic=false);
+
+    /**
+     * @brief Construct an AprilTag detector on single view
+     * @param c camera calibration
+     * @param camerPose camera pose
+     * @param f name of the QR family to use (not used for now)
+     */
+    explicit QrCodeDetector(xv::UnifiedCameraModel const& c, xv::Transform const& camerPose, std::string const& f="", bool subpixelic=false);
+
+    /**
+     * @brief Construct an AprilTag detector on single view
+     * @param c camera calibration
+     * @param camerPose camera pose
+     * @param f name of the QR family to use (not used for now)
+     */
+    explicit QrCodeDetector(xv::SpecialUnifiedCameraModel const& c, xv::Transform const& camerPose, std::string const& f="", bool subpixelic=false);
+
+    /**
+     * @brief Construct an AprilTag detector without camera calibration (only 2D detections are available)
+     * @param c multi camera calibration
+     * @param f name of the QR family to use (not used for now)
+     */
+    explicit QrCodeDetector(std::string const& f="", bool subpixelic=false);
+
+    /**
+     * @brief Detect AprilTags in Fisheye Images and return the poses of the tags
+     * @param tagSize : of the side of the april tag to detect (in m)
+     * @return vector of pairs with tag id and pose of the tag
+     */
+    virtual std::vector<TagPose> detect(xv::FisheyeImages const& fe, double tagSize) override;
+
+    /**
+     * @brief Detect AprilTags in a grayscale image and return the poses of the tags
+     * @param tagSize : of the side of the april tag to detect (in m)
+     * @return vector of pairs with tag id and pose of the tag
+     */
+    virtual std::vector<TagPose> detect(xv::GrayScaleImage const& im, double tagSize) override;
+
+    /**
+     * @brief Detect AprilTags in a grayscale image and return the 4 corners of each detected tag
+     * @return vector of pairs with tag id and 4 corners of the tag (in pxl)
+     */
+    virtual std::vector<TagDetection> detect(const xv::GrayScaleImage& fe) override;
+
+    /**
+     * @brief Compute the poses of the tags detections
+     * @param detections: tag detections
+     * @param tagSize: size of the tag (in m)
+     * @return the tag poses
+     */
+    virtual std::vector<TagPose> detectionsToPoses(const std::vector<TagDetection>& detections, double tagSize) override;
+
+    /**
+     * @brief Detect AprilTags in a multiple cameras system and return the 4 corners of each detected tag
+     * @return map of detections by tag id, each vector of tag detection has the size of the number of images
+     */
+    virtual std::map<int, std::vector<TagDetection> > detect(const xv::FisheyeImages &fe) override;
+    /**
+     * @brief Compute the poses of the tags detections for multiple cameras case
+     * @param detections: tag detections grouped by tagId, each vector of tag detection has the size of the number of images
+     * @param tagSize: size of the tag (in m)
+     * @return the tag poses
+     */
+    virtual std::vector<TagPose> detectionsToPoses(const std::map<int, std::vector<TagDetection> > &detectionsByTagId, double tagSize) override;
+
+    /**
+     * @brief Get the QR code text corresponding the id of the xv::TagDetection
+     * @param id : int identifier of the TagDetection to query
+     * @return the QR code text encoded in the TagDetection with id
+     */
+    std::string getCode(int id) const;
+
+private:
+    std::shared_ptr <QrCodeDetectorImpl> pimpl;
+};
+
+class AprilTagDetector : public TagDetector {
 public:
     /**
      * @brief Construct an AprilTag detector
@@ -357,20 +576,20 @@ public:
      * @param tagSize : of the side of the april tag to detect (in m)
      * @return vector of pairs with tag id and pose of the tag
      */
-    std::vector<TagPose> detect(xv::FisheyeImages const& fe, double tagSize) const;
+    std::vector<TagPose> detect(xv::FisheyeImages const& fe, double tagSize) override;
 
     /**
      * @brief Detect AprilTags in a grayscale image and return the poses of the tags
      * @param tagSize : of the side of the april tag to detect (in m)
      * @return vector of pairs with tag id and pose of the tag
      */
-    std::vector<TagPose> detect(xv::GrayScaleImage const& im, double tagSize) const;
+    std::vector<TagPose> detect(xv::GrayScaleImage const& im, double tagSize) override;
 
     /**
      * @brief Detect AprilTags in a grayscale image and return the 4 corners of each detected tag
      * @return vector of pairs with tag id and 4 corners of the tag (in pxl)
      */
-    std::vector<TagDetection> detect(const xv::GrayScaleImage& fe);
+    std::vector<TagDetection> detect(const xv::GrayScaleImage& fe) override;
 
     /**
      * @brief Compute the poses of the tags detections
@@ -378,54 +597,20 @@ public:
      * @param tagSize: size of the tag (in m)
      * @return the tag poses
      */
-    std::vector<TagPose> detectionsToPoses(const std::vector<TagDetection>& detections, double tagSize);
+    std::vector<TagPose> detectionsToPoses(const std::vector<TagDetection>& detections, double tagSize) override;
 
     /**
      * @brief Detect AprilTags in a multiple cameras system and return the 4 corners of each detected tag
      * @return map of detections by tag id, each vector of tag detection has the size of the number of images
      */
-    std::map<int, std::vector<TagDetection> > detect(const xv::FisheyeImages &fe);
+    std::map<int, std::vector<TagDetection> > detect(const xv::FisheyeImages &fe) override;
     /**
      * @brief Compute the poses of the tags detections for multiple cameras case
      * @param detections: tag detections grouped by tagId, each vector of tag detection has the size of the number of images
      * @param tagSize: size of the tag (in m)
      * @return the tag poses
      */
-    std::vector<TagPose> detectionsToPoses(const std::map<int, std::vector<TagDetection> > &detectionsByTagId, double tagSize);
-
-    /**
-     * @brief Start a tag detectors
-     * @param slam : SLAM to use for localisation of the tag. The detected tags will be in world frame coordinates as defined by the SLAM.
-     * @param tagFamily : can be "41h12" "36h11" "25h9" or "16h5" (AprilTag)
-     * @param size : size in m of the real tag side
-     * @param refreshRate : the refresh rate used for the detection (in Hz)
-     * @return Id of the started detector.
-     */
-    static std::string startTagDetector(std::shared_ptr<xv::FisheyeCameras>, std::shared_ptr<Slam> slam, std::string const& tagFamily, double size, double refreshRate);
-    /**
-     * @brief Start a tag detectors
-     * @param slam : SLAM to use for localisation of the tag. The detected tags will be in world frame coordinates as defined by the SLAM.
-     * @param tagFamily : can be "41h12" "36h11" "25h9" or "16h5" (AprilTag)
-     * @param size : size in m of the real tag side
-     * @param refreshRate : the refresh rate used for the detection (in Hz)
-     * @return Id of the started detector.
-     */
-    static std::string startTagDetector(std::shared_ptr<xv::ColorCamera>, std::shared_ptr<Slam> slam, std::string const& tagFamily, double size, double refreshRate);
-
-    /**
-     * @brief Stop a tag detector.
-     * @param detectorId : detector id (see output of #startTagDetector)
-     * @return True if succeeded to stop the detector.
-     */
-    static bool stopTagDetector(std::string const& detectorId);
-    /**
-     * @brief Get the current localized tag detections in SLAM world frame coordinates.
-     *
-     * @param detectorId : detector id
-     * @return Poses of all the detected tags, even if the tag is not visible, if it was once detected it remains in this output map.
-     */
-    static std::map<int,xv::Pose> getTagDetections(std::string const& detectorId);
-
+    std::vector<TagPose> detectionsToPoses(const std::map<int, std::vector<TagDetection> > &detectionsByTagId, double tagSize) override;
 
 private:
     std::shared_ptr <x::AprilTagDetector> pimpl;
@@ -459,6 +644,14 @@ public:
      * @return Poses of all the detected tags, even if the tag is not visible, if it was once detected it remains in this output map.
      */
     std::map<int,xv::Pose> getTagDetections(std::string const& detectorId);
+
+    /**
+     * @brief In case of QR code detector, get QR code text corresponding the id of the xv::TagDetection
+     * @param detectorId : detector id
+     * @param id : int identifier of the TagDetection to query
+     * @return the QR code text encoded in the TagDetection with id
+     */
+    std::string getCode(std::string const& detectorId, int id) const;
 };
 
 /**
@@ -467,9 +660,9 @@ public:
 class FisheyeCamerasEx : public FisheyeCameras, public std::enable_shared_from_this<FisheyeCamerasEx>
 {
 
-    std::mutex m_aprilTagDetectorsMtx;
-    std::unordered_map<std::string, std::shared_ptr<AprilTagDetector>> m_aprilTagDetectors;
-    std::shared_ptr<AprilTagDetector> getDetector(std::string const& tagFamily);
+    std::mutex m_tagDetectorsMtx;
+    std::unordered_map<std::string, std::shared_ptr<TagDetector>> m_tagDetectors;
+    std::shared_ptr<TagDetector> getDetector(std::string const& tagFamily);
 
     std::mutex m_lastFisheyeImageMtx;
     xv::FisheyeImages m_lastFisheyeImage;
@@ -485,6 +678,9 @@ public:
     virtual int registerKeyPointsCallback(std::function<void (const FisheyeKeyPoints<4,32>&)>) = 0;
     virtual bool unregisterKeyPointsCallback(int callbackId) = 0;
     virtual bool unregisterKeyPoints4Callback(int callbackId) = 0;
+
+    virtual int registerFramesCallback(std::function<void (const Frames&)>) = 0;
+    virtual bool unregisterFramesCallback(int callbackID)  = 0;
 
     virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
     virtual const std::vector<CalibrationEx>& defaultcalibration() = 0;
@@ -558,6 +754,14 @@ public:
      */
     std::map<int,xv::Pose> getTagDetections(std::string const& detectorId);
 
+    /**
+     * @brief In case of QR code detector, get QR code text corresponding the id of the xv::TagDetection
+     * @param detectorId : detector id
+     * @param id : int identifier of the TagDetection to query
+     * @return the QR code text encoded in the TagDetection with id
+     */
+    std::string getCode(std::string const& detectorId, int id) const;
+
     virtual DeviceEx::StereoInputType externalStereoInputType() const = 0;
     virtual bool getAecParameters(IspAecSetting& params) = 0;
     virtual void setAecParameters(const IspAecSetting& params) = 0;
@@ -599,6 +803,17 @@ public:
     virtual std::vector<std::shared_ptr<CameraModel>> camerasModel() {
             return {};
     }
+};
+
+class ThermalCameraEX : public ThermalCamera {
+public:
+    virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
+};
+
+class IrTrackingCameraEX : public IrTrackingCamera {
+public:
+    virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
+    virtual const std::vector<CalibrationEx>& calibrationEx2() = 0;
 };
 
 namespace ex {
@@ -655,6 +870,9 @@ protected:
     bool m_surfaceUseFisheyes = false; //!< instead of Tof as depth source
     bool m_surfaceUseFisheyeTexturing = true; //!< fisheye texturing instead of RGB texturing
     double m_surfaceMinVoxelSize = 0.1;
+    double m_surfaceNearDepthLimit = -1.;
+    double m_surfaceFarDepthLimit = -1.;
+    int m_surfacePointCloudDecimationFactor = 1; //!< for example, a value of 2 will divide ToF resolution by 2
     bool m_useAccel = true; //!< use the IMU acceleration (true by default)
 
 public:
@@ -670,6 +888,9 @@ public:
     virtual void setSurfaceUseFisheyes(bool use) { m_surfaceUseFisheyes = use;}
     virtual void setSurfaceUseFisheyeTexturing(bool use) { m_surfaceUseFisheyeTexturing = use;}
     virtual void setSurfaceMinVoxelSize(double size) { m_surfaceMinVoxelSize = size; }
+    virtual void setSurfaceNearDepthLimit(double nearDepthLimit) { m_surfaceNearDepthLimit = nearDepthLimit; }
+    virtual void setSurfaceFarDepthLimit(double farDepthLimit) { m_surfaceFarDepthLimit = farDepthLimit; }
+    virtual void setSurfacePointCloudDecimationFactor(int decimationFactor) { m_surfacePointCloudDecimationFactor = decimationFactor; }
 
     virtual void setUseAccel(bool use) { m_useAccel = use; }
 
@@ -765,6 +986,18 @@ public:
      */
     bool getRgbPixel3dPoseAt(xv::Vector3d& pointerPose, double hostTimestamp, xv::Vector2d const& rgbPixelPoint, double radius);
 
+    /**
+     * @brief Get the position of the pointed area in RGB image, it uses ToF to determine the depth.
+     *
+     * If SLAM is running, then the output pointerPose is in World frame coordinate of the SLAM, else it is relative to the IMU frame coordinate.
+     *
+     * @param pointerPose: 3D position in World frame coordinate of the points selected in RGB,first is rgb pixel, second is 3d pose corresponding to rgb pixel
+     * @param hostTimestamp: timestamp corresponding to the pointing, if no SLAM is running, set this value to -1
+     * @param rgbPixelPoint: xy position of the points in color image (in pixel)
+     * @param radius: size of the area to select for ToF 3D points selection
+     * @return true if succes, false else
+     */
+    bool getRgbPixelbuff3dPoseAt(std::vector<std::pair<xv::Vector2d,xv::Vector3d>> &pointerPose, double hostTimestamp, const std::vector<xv::Vector2d>  &rgbPixelPoint, double radius);
 private:
     class Impl;
     std::unique_ptr<Impl> pImpl;
@@ -886,6 +1119,117 @@ public:
 	 *  0 success
      */
     int InputCameraImage(const unsigned char* image, int size, int width, int height, long long timestamp) ;
+
+    /**
+    @brief Enter calibration mode.
+
+    This function should be called before other calibration API.
+    @param eyetracker: Eyetracker handle.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationEnter();
+
+    /**
+    @brief Leave calibration mode.
+
+    This function should be called when calibration process is finished.
+    @param eyetracker: Eyetracker handle.
+    @param result: Returned result of the latest calibration routine.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationLeave(int* result);
+
+    /**
+    @brief Collect 3D gaze point position based on the eye tracking coordinates system gazed by user for calculating calibration parameters.
+
+    @param eyetracker: Eyetracker handle.
+    @param x: The x coordinate of the collected point. (unit: mm)
+    @param y: The y coordinate of the collected point. (unit: mm)
+    @param z: The z coordinate of the collected point. (unit: mm)
+    @param index: The index of the collected point.
+    @param status: The return status for the collection.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationCollect(float x, float y, float z, int index, int *status);
+
+    /**
+    @brief Retrieve the calibration parameters data.
+
+    After retrieve the calibration parameters, you can save them and restore the calibration parameters by CalibrationApply in the next time to skip calibration process.
+
+    @param eyetracker: Eyetracker handle.
+    @param data: The calibration parameters data returned.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationRetrieve(GazeCalibrationData** data);
+
+    /**
+    @brief Apply the calibration parameters data.
+
+    In order to restore the calibration parameters, you can apply the data got from @ref CalibrationRetrieve.
+
+    After that, you can skip calibration process.
+    @param eyetracker: Eyetracker handle.
+    @param data: The calibration parameters data to restore.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationApply(GazeCalibrationData* data);
+
+    /**
+    @brief Clear all the collected calibration points and reset the calibration parameters.
+    @param eyetracker: Eyetracker handle.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationReset();
+
+    /**
+    @brief Compute calibration parameters and apply it to device.
+    This function should be called after all the calibration points are collected.
+    @param eyetracker: Eyetracker handle.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationComputeApply();
+
+    /**
+    @brief Setup for calibration process
+    This function should be called before collect calibration points.
+    @param eyetracker: Eyetracker handle.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationSetup();
+
+    /**
+    @brief Query calibration routine internal status
+    This function could be called anytime to query the status of calibration routine API.
+    @param eyetracker: Eyetracker handle.
+    @param calib_status: Returned a struct represented each calibration API's status.
+    @returns A @ref code.
+    */
+    GazeStatus CalibrationQueryStatus(CalibrationStatus *calib_status);
+
+    /**
+    @brief   set beginning of calibration
+    @param   et_idx : eye index
+    @return  1 succeed, 0 failure
+    */
+    int pubCalibBegin(int et_idx);
+
+    /**
+    @brief   set confirmed gaze point on screen
+    @param   et_idx : eye index
+    @param   s_idx  : gaze point on screen, index can be 0, 1, 2
+    @param   conf_gaze_o: gaze point on screen in unit of pixel, [0] x, [1] y
+    @return  1 succeed, 0 failure
+    */
+    int pubSetConfGaze( int et_idx, int s_idx, float *conf_gaze_o );
+
+    /**
+    @brief   set ending of calibration
+    @param   et_idx : eye index
+    @return  1 succeed, 0 failure
+    */
+    int pubCalibEnd(int et_idx);
+
 };
 
 /**

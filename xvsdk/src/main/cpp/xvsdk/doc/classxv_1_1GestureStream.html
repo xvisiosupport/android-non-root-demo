@@ -100,12 +100,15 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>UnregisterDyn
 <tr class="memitem:a90b1b1768e66376365bf762486d9e0c0"><td class="memItemLeft" align="right" valign="top"><a id="a90b1b1768e66376365bf762486d9e0c0"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterKeypointsCallback</b> (int callbackId)=0</td></tr>
 <tr class="separator:a90b1b1768e66376365bf762486d9e0c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a967e5b570692739562a3fcf60bc83309"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStream.html#a967e5b570692739562a3fcf60bc83309">registerSlamKeypointsCallback</a> (std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1Pose.html">Pose</a> &gt;&gt;)&gt; callback)=0</td></tr>
-<tr class="memdesc:a967e5b570692739562a3fcf60bc83309"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to get the keypoints 21Dof information based on slam position.  <a href="classxv_1_1GestureStream.html#a967e5b570692739562a3fcf60bc83309">More...</a><br /></td></tr>
-<tr class="separator:a967e5b570692739562a3fcf60bc83309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a24acac76252431bbdc1c5c867e69e714"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1GestureStream.html#a24acac76252431bbdc1c5c867e69e714">registerSlamKeypointsCallback</a> (std::function&lt; void(std::shared_ptr&lt; const <a class="el" href="structxv_1_1HandPose.html">xv::HandPose</a> &gt;)&gt; callback)=0</td></tr>
+<tr class="memdesc:a24acac76252431bbdc1c5c867e69e714"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback to get the keypoints 21Dof information based on slam position.  <a href="classxv_1_1GestureStream.html#a24acac76252431bbdc1c5c867e69e714">More...</a><br /></td></tr>
+<tr class="separator:a24acac76252431bbdc1c5c867e69e714"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af36c1fec8874bc80f65ce30309d18f7d"><td class="memItemLeft" align="right" valign="top"><a id="af36c1fec8874bc80f65ce30309d18f7d"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterSlamKeypointsCallback</b> (int callbackId)=0</td></tr>
 <tr class="separator:af36c1fec8874bc80f65ce30309d18f7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a006126f2213601ceda46e755f2064a85"><td class="memItemLeft" align="right" valign="top"><a id="a006126f2213601ceda46e755f2064a85"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setPlatform</b> (int platform, bool ego)=0</td></tr>
+<tr class="separator:a006126f2213601ceda46e755f2064a85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -185,8 +188,8 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 
 </div>
 </div>
-<a id="a967e5b570692739562a3fcf60bc83309"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a967e5b570692739562a3fcf60bc83309">&#9670;&nbsp;</a></span>registerSlamKeypointsCallback()</h2>
+<a id="a24acac76252431bbdc1c5c867e69e714"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24acac76252431bbdc1c5c867e69e714">&#9670;&nbsp;</a></span>registerSlamKeypointsCallback()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -197,7 +200,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
         <tr>
           <td class="memname">virtual int xv::GestureStream::registerSlamKeypointsCallback </td>
           <td>(</td>
-          <td class="paramtype">std::function&lt; void(std::shared_ptr&lt; const std::vector&lt; <a class="el" href="structxv_1_1Pose.html">Pose</a> &gt;&gt;)&gt;&#160;</td>
+          <td class="paramtype">std::function&lt; void(std::shared_ptr&lt; const <a class="el" href="structxv_1_1HandPose.html">xv::HandPose</a> &gt;)&gt;&#160;</td>
           <td class="paramname"><em>callback</em></td><td>)</td>
           <td></td>
         </tr>
@@ -216,7 +219,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/blues/sdk/xvsdk-0519/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

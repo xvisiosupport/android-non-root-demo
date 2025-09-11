@@ -1,3 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classxv_1_1details_1_1TransformQuat__.html" title=" " alt="" coords="5,5,199,47"/>
+<area shape="rect" id="node1" href="$classxv_1_1details_1_1Transform__.html" title=" " alt="" coords="5,104,169,145"/>
+<area shape="rect" id="node2" href="$classxv_1_1details_1_1PoseRot__.html" title=" " alt="" coords="217,39,368,80"/>
+<area shape="rect" id="node8" href="$classxv_1_1details_1_1PoseRot__.html" title=" " alt="" coords="217,104,368,145"/>
+<area shape="rect" id="node9" href="$structxv_1_1Transform.html" title="Represents a transformation (or pose) with translation and rotation matrix." alt="" coords="237,170,349,197"/>
+<area shape="rect" id="node3" href="$classxv_1_1details_1_1Pose__.html" title=" " alt="" coords="435,8,571,49"/>
+<area shape="rect" id="node6" href="$classxv_1_1details_1_1Pose__.html" title=" " alt="" coords="416,75,591,102"/>
+<area shape="rect" id="node4" href="$classxv_1_1details_1_1PosePred__.html" title=" " alt="" coords="639,5,797,47"/>
+<area shape="rect" id="node5" href="$structxv_1_1Pose.html" title="Class representing a 6dof pose at a timestamp with a linear model for prediction." alt="" coords="845,13,923,39"/>
+<area shape="rect" id="node7" href="$classxv_1_1details_1_1PosePred__.html" title=" " alt="" coords="639,71,797,112"/>
 </map>

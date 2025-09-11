@@ -202,20 +202,11 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             modeSelect = i;
-
-            switch (i) {
-                case R.id.radio_mixed:
-                    isMixedMode = true;
-                    break;
-
-                case R.id.radio_edge:
-                    isMixedMode = false;
-                    break;
-
-                default:
-                    break;
+            if (i == R.id.radio_mixed) {
+                isMixedMode = true;
+            } else if (i == R.id.radio_edge) {
+                isMixedMode = false;
             }
-
             mCamera.setSlamMode(isMixedMode ? 0 : 2);
         }
     };
@@ -232,25 +223,14 @@ public class MainActivity extends AppCompatActivity {
             mCamera.stopStream(XCamera.Stream.STEREO);
             mCamera.stopStream(XCamera.Stream.SGBM);
 
-            switch (i) {
-                case R.id.radio_rgb:
-                    mCamera.startStream(XCamera.Stream.RGB);
-                    break;
-
-                case R.id.radio_tof:
-                    mCamera.startStream(XCamera.Stream.TOF);
-                    break;
-
-                case R.id.radio_stereo:
-                    mCamera.startStream(XCamera.Stream.STEREO);
-                    break;
-
-                case R.id.radio_sgbm:
-                    mCamera.startStream(XCamera.Stream.SGBM);
-                    break;
-
-                default:
-                    break;
+            if (i == R.id.radio_rgb) {
+                mCamera.startStream(XCamera.Stream.RGB);
+            } else if (i == R.id.radio_tof) {
+                mCamera.startStream(XCamera.Stream.TOF);
+            } else if (i == R.id.radio_stereo) {
+                mCamera.startStream(XCamera.Stream.STEREO);
+            } else if (i == R.id.radio_sgbm) {
+                mCamera.startStream(XCamera.Stream.SGBM);
             }
         }
     };

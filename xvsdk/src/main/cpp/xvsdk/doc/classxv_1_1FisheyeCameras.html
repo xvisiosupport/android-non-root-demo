@@ -88,6 +88,18 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>Data</b> = <a class=
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a33aa346bb12bfae19976c51050372cd5"><td class="memItemLeft" align="right" valign="top"><a id="a33aa346bb12bfae19976c51050372cd5"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerAntiDistortionCallback</b> (std::function&lt; void(<a class="el" href="structxv_1_1FisheyeImages.html">FisheyeImages</a> const &amp;)&gt; cb)=0</td></tr>
+<tr class="separator:a33aa346bb12bfae19976c51050372cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26bee94b1c7f14e04f6c9086c08cb8e5"><td class="memItemLeft" align="right" valign="top"><a id="a26bee94b1c7f14e04f6c9086c08cb8e5"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterAntiDistortionCallback</b> (int callbackID)=0</td></tr>
+<tr class="separator:a26bee94b1c7f14e04f6c9086c08cb8e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab003e324e76fa3fd26916460f515ca0b"><td class="memItemLeft" align="right" valign="top"><a id="ab003e324e76fa3fd26916460f515ca0b"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>checkAntiDistortionSupport</b> ()=0</td></tr>
+<tr class="separator:ab003e324e76fa3fd26916460f515ca0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f3703a0c5b1fc208b1d202055f2ffac"><td class="memItemLeft" align="right" valign="top"><a id="a3f3703a0c5b1fc208b1d202055f2ffac"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>getExposure</b> (<a class="el" href="structxv_1_1ExposureParam.html">ExposureParam</a> &amp;param)=0</td></tr>
+<tr class="separator:a3f3703a0c5b1fc208b1d202055f2ffac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="memItemLeft" align="right" valign="top"><a id="a4cbf0b88c319293a55cb13ae15d87bdf"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#a4cbf0b88c319293a55cb13ae15d87bdf">start</a> ()=0</td></tr>
 <tr class="memdesc:a4cbf0b88c319293a55cb13ae15d87bdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">start streaming. <br /></td></tr>
@@ -239,7 +251,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setFramerate<
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/blues/sdk/xvsdk-0519/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

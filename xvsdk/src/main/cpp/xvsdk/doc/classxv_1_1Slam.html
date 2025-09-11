@@ -163,6 +163,19 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterMap
 <tr class="memitem:a982802d27246c039d89771836d54472e"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structxv_1_1Pose.html">Pose</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#a982802d27246c039d89771836d54472e">poseScaleCalibration</a> (const <a class="el" href="structxv_1_1Pose.html">Pose</a> &amp;pose)=0</td></tr>
 <tr class="memdesc:a982802d27246c039d89771836d54472e"><td class="mdescLeft">&#160;</td><td class="mdescRight">slam pose scale calibration.  <a href="classxv_1_1Slam.html#a982802d27246c039d89771836d54472e">More...</a><br /></td></tr>
 <tr class="separator:a982802d27246c039d89771836d54472e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e4a196cdc172608f48570c5c494ee6d"><td class="memItemLeft" align="right" valign="top"><a id="a9e4a196cdc172608f48570c5c494ee6d"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Slam.html#a9e4a196cdc172608f48570c5c494ee6d">poseReset</a> ()=0</td></tr>
+<tr class="memdesc:a9e4a196cdc172608f48570c5c494ee6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the 6dof pose coordinate (SLAM) <br /></td></tr>
+<tr class="separator:a9e4a196cdc172608f48570c5c494ee6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50b970c7dc9d5d82bddcbf14b37a2e2f"><td class="memItemLeft" align="right" valign="top"><a id="a50b970c7dc9d5d82bddcbf14b37a2e2f"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>registerSharedMapCallback</b> (std::function&lt; void(std::vector&lt; uint8_t &gt; const &amp;)&gt; cb)=0</td></tr>
+<tr class="separator:a50b970c7dc9d5d82bddcbf14b37a2e2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9203b585ae5a2416e818068baa520609"><td class="memItemLeft" align="right" valign="top"><a id="a9203b585ae5a2416e818068baa520609"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterSharedMapCallback</b> (int callbackId)=0</td></tr>
+<tr class="separator:a9203b585ae5a2416e818068baa520609"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17fdac1576cdb74b26fee3ca11aeb404"><td class="memItemLeft" align="right" valign="top"><a id="a17fdac1576cdb74b26fee3ca11aeb404"></a>
+virtual const std::vector&lt; uint8_t &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>getFirstSharedMap</b> ()=0</td></tr>
+<tr class="separator:a17fdac1576cdb74b26fee3ca11aeb404"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9f3bf10782ee511900ca3eb94039d20"><td class="memItemLeft" align="right" valign="top"><a id="aa9f3bf10782ee511900ca3eb94039d20"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classxv_1_1Stream.html#aa9f3bf10782ee511900ca3eb94039d20">stop</a> ()=0</td></tr>
 <tr class="memdesc:aa9f3bf10782ee511900ca3eb94039d20"><td class="mdescLeft">&#160;</td><td class="mdescRight">stop streaming. <br /></td></tr>
@@ -703,7 +716,7 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/xvsdk/Work/DailyBuild/build/work/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
+<li>/home/blues/sdk/xvsdk-0519/xvsdk/include/<a class="el" href="xv-sdk_8h_source.html">xv-sdk.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

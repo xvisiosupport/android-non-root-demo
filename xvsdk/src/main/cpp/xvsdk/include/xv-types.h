@@ -34,7 +34,8 @@ enum class SlamStartMode {
 enum DeviceSupport {
     ONLYUSB,
     ONLYDRIVER,
-    USBANDDRIVER
+    USBANDDRIVER,
+    ONLY_WIRELESS_CONTROLLER
 };
 
 
@@ -1137,6 +1138,23 @@ struct PointCloud {
     std::vector<Vector3f> points;
 };
 
+struct BeiDouGPSData
+{
+    uint8_t data_ready_flag; // 0:invalid   1:valid
+    double lat_data; //Latitude data   
+    uint8_t latdir;  //latdir == 1(lat_data  is north latitude)  latdir == 2(lat_data  is south latitude)
+    double lon_data; //Longitude data
+    uint8_t londir;  //londir == 1(lon_data is east longitude)  londir == 2(lon_data is west longitude) 
+    int satellite_num;  //Number of satellites
+    uint8_t mode;       //mode == 1 (GPS + BDS)  mode == 2(BDS)
+};
+
+enum class BeiDouGPSMode
+{
+    BDS_SINGLE = 0,
+    BDS_GPS_MIX = 1
+};
+
 /**
  * @brief Object detection bounding box.
  */
@@ -1159,10 +1177,31 @@ struct Object {
     std::vector<keypoint> keypoints;
 };
 
+/**
+ * @brief Object detection bounding box. 2d
+ */
+struct Det2dObject{
+    struct keypoint {
+        double x = -1, y = -1, z = -1;
+    };
+
+    int idx;
+    std::string name;
+    float score;
+    float left, top, width, height;
+    std::vector<keypoint> keypoints;
+    Det2dObject(){};
+    Det2dObject(int i, const std::string& n, float s, float l, float t, float w, float h) : 
+        idx(i), name(n), score(s), left(l), top(t), width(w), height(h) {}
+    Det2dObject(int i, const std::string& n, float s, float l, float t, float w, float h, std::vector<keypoint> pts) : 
+        idx(i), name(n), score(s), left(l), top(t), width(w), height(h), keypoints(pts){}
+};
 
 struct CnnRawWrapper{
     std::shared_ptr<float> raw_data = nullptr;
     unsigned int raw_data_length;
+    double hostTimestamp;
+    uint64_t edgeTimestamp;
 };
 
 
@@ -1184,8 +1223,9 @@ struct ObjectDescriptor{
  * @note Length, width and depth are in millimeters.
  */
 struct SgbmImage {
-    enum class Type { Disparity = 0, Depth, PointCloud};
-    const Type type;
+    enum class Type { Disparity = 0, Depth, PointCloud, None};
+    Type type;
+    SgbmImage() : type(Type::None) {}
     explicit SgbmImage(Type t) : type(t) {}
     std::size_t width = 0; //!< width of the image (in pixel)
     std::size_t height = 0; //!< height of the image (in pixel)
@@ -1216,6 +1256,27 @@ struct ThermalImage {
      * @brief Convert to a #xv::RgbImage
      */
     RgbImage toRgb() const;
+
+    //  InfraredImage(std::shared_ptr<const std::uint8_t> ptr) :
+    //     data(ptr)
+    // {
+
+    // }
+    // std::size_t width = 0; //!< width of the image (in pixel)
+    // std::size_t height = 0; //!< height of the image (in pixel)
+    // std::shared_ptr<const std::uint8_t> data = nullptr; //! image of depth
+    // unsigned int dataSize = 0;
+    // double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
+    // std::int64_t edgeTimestampUs = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
+};
+
+struct IrTrackingImage {
+    enum class Codec {UYVY};
+    std::size_t width = 0; //!< width of the image (in pixel)
+    std::size_t height = 0; //!< height of the image (in pixel)
+    std::shared_ptr<const std::uint8_t> data;
+    double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
+    std::int64_t deviceTimestamp = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
 };
 
 /**
@@ -1384,6 +1445,116 @@ struct XV_ET_EYE_DATA_EX
 
     XV_ET_EYE_EXDATA leftExData;//!<left eye extend data(include blink and eyelid data)
     XV_ET_EYE_EXDATA rightExData;//!<right eye extend data(include blink and eyelid data)
+
+    int leftEyeMove;//!<0-Eye movement type is no-eye detected. 1-Eye movement type is blink. 2-Eye movement type is noraml.
+    int rightEyeMove;//!<0-Eye movement type is no-eye detected. 1-Eye movement type is blink. 2-Eye movement type is noraml.
+    float ipd;//!<The estimated interpupilary distance (IPD)
+};
+
+/** Status codes returned by the API. */
+typedef enum GazeStatus {
+    /** No error. */
+    GAZE_STATUS_OK,
+
+    /** Undefined error. */
+    GAZE_STATUS_ERROR,
+
+    /** Failed to initialize the API. */
+    GAZE_STATUS_INITIALIZE_FAILED,
+
+    /** Failed to terminate the API. */
+    GAZE_STATUS_TERMINATE_FAILED,
+
+    /** An invalid parameter was given. */
+    GAZE_STATUS_INVALID_PARAMETER,
+
+    /** The operation was invalid. */
+    GAZE_STATUS_INVALID_OPERATION,
+
+    /** The device is unavailable. */
+    GAZE_STATUS_DEVICE_NOT_AVAILABLE,
+
+    /** The operation timed out. */
+    GAZE_STATUS_TIMED_OUT,
+
+    /** Failed to allocate memory. */
+    GAZE_STATUS_MEM_ALLOCATION_FAILED
+}
+GazeStatus;
+
+
+typedef enum CalibrationApiStatus {
+    /**
+     * Special status for CalibrationSetup API.
+     *   Indicates that this operation already performed 'automatically' inside the algorithm core.
+     */
+    CALIBRATION_API_STATUS_COMPLETE_AUTOMATICALLY,
+
+    /** Indicates that this operation already completed by a previous explict call. */
+    CALIBRATION_API_STATUS_COMPLETE_MANUALLY,
+
+    /**
+     * Indicate that the API is ready for calling.
+     *   Or failing on a CalibrationSetup explicit call (special definition)
+     */
+    CALIBRATION_API_STATUS_ACCEPT_CALLING,
+
+    /** Indicate that the API is NOT ready for calling, could lead to undefined behavior if calling the not-ready-API */
+    CALIBRATION_API_STATUS_DO_NOT_CALL,
+
+    /** Special status for CalibrationSetup API, since its internal computation may take longer time than the other APIs */
+    CALIBRATION_API_STATUS_BUSY
+}
+CalibrationApiStatus;
+
+/** A struct to represent the current calibration routine API status */
+typedef struct CalibrationStatus {
+    /** The status of API CalibrationEnter */
+    CalibrationApiStatus enter_status;
+
+    /** The status of API CalibrationCollect */
+    CalibrationApiStatus collect_status;
+
+    /** The status of API CalibrationSetup */
+    CalibrationApiStatus setup_status;
+
+    /** The status of API CalibrationComputeApply */
+    CalibrationApiStatus compute_apply_status;
+
+    /** The status of API CalibrationLeave */
+    CalibrationApiStatus leave_status;
+
+    /** The status of API CalibrationReset */
+    CalibrationApiStatus reset_status;
+}
+CalibrationStatus;
+
+/** A structure represents the calibration data used by the eye tracker. */
+typedef struct GazeCalibrationData {
+    /** The calibration data used by the eye tracker. */
+    void* data = nullptr;
+
+    /** The size of the calibration data used by the eye tracker. */
+    size_t size;
+
+    /** Default Destructor */
+    ~GazeCalibrationData()
+    {
+        if (data != nullptr)
+        {
+            free(data);
+            data = nullptr;
+        }
+    };
+}
+GazeCalibrationData;
+
+struct XV_IRIS_DATA
+{
+    std::vector<char> name;
+    std::vector<unsigned char> feature;
+    int size;
+    int error;
 };
 
 /**
@@ -1416,6 +1587,117 @@ struct PointMatches
 {
     FisheyeImages fisheyeImages;
     std::vector<std::vector<Triple>> matches;
+};
+
+struct TerrestrialMagnetismData
+{
+    float offset[3];
+    float angles[3];
+    float magnetic[3];
+    int level;
+};
+
+/**
+ * @brief new hand pose struct.
+ */
+struct HandPose{
+    std::vector<Pose> pose; // 26 + 26
+    float scale[2];   // 1 + 1
+    int status[2] = {-1,-1};
+    double timestamp[2];
+    double fisheye_timestamp;
+};
+
+struct ExternalData {
+    int             tv_sec;
+    int             tv_msec;
+    std::uint8_t    state;
+    float           x;
+    float           y;
+    float           z;
+    float           pitch;
+    float           roll;
+    float           yaw;
+    double          hostTimestamp;
+};
+
+enum WirelessControllerDataType
+{
+    UNKNOW = 0,
+    LEFT = 0xC4,
+    RIGHT = 0xC5,
+    ALL = 0xC6
+};
+struct WirelessControllerData
+{
+    WirelessControllerDataType type;
+    Pose pose;
+    uint8_t keyTrigger;
+    uint8_t keySide;
+    int16_t rocker_x;
+    int16_t rocker_y;
+    uint8_t key;
+};
+
+enum WirelessControllerSlamType 
+{
+    VIO = 1,
+    CSLAM = 2,
+    REAL_TIME_SHARED_MAP = 3
+};
+
+struct WirelessControllerState
+{
+    std::string name;
+    std::string mac;
+    int state;
+};
+
+struct WirelessControllerDeviceInformation
+{
+    uint8_t battery;            // 1 bytes
+    uint8_t temp;               // 1 bytes
+};
+
+struct GazeConfigs
+{
+    int screenWidth;
+    int screenHeight;
+    int etWidth;
+    int etHeight;
+    float ipdDist;
+    int srValue;
+    int loplength;
+    float etFoclen;
+    float etOccupy;
+    float ftFoclen;
+    int hiValue;
+};
+
+struct ResolutionParam
+{
+    int width = -1;
+    int height = -1;
+};
+
+struct RoiParam
+{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+struct ExposureParam
+{
+    unsigned int time; // The unit is microseconds.
+    float gain;
+};
+
+struct IrTrackingTemperature
+{
+    int one;
+    int two;
 };
 
 }

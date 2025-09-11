@@ -19,6 +19,40 @@
 #include <corecrt_math_defines.h>
 #endif
 
+std::shared_ptr<xv::Device> device = nullptr;
+
+xv::XV_IRIS_DATA irisData;
+
+static struct xv::sgbm_config global_config = {
+    1 ,//enable_dewarp
+    1.0, //dewarp_zoom_factor
+    0, //enable_disparity
+    1, //enable_depth
+    0, //enable_point_cloud
+    0.08, //baseline
+    96, //fov
+    255, //disparity_confidence_threshold
+    {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, //homography
+    1, //enable_gamma
+    2.2, //gamma_value
+    0, //enable_gaussian
+    0, //mode
+    8000, //max_distance
+    100, //min_distance
+};
+
+
+void enrollCallback(const xv::XV_IRIS_DATA &enrollData)
+{
+    printf("enter into enroll callback\n");
+    irisData = enrollData;
+}
+
+void irisCallback(const xv::XV_IRIS_DATA &irisData)
+{
+    printf("enter into iris callback\n");
+}
+
 int requestCmdAllPlatform(const char* tip_info, int size)
 {
 #ifdef _WIN32
@@ -252,7 +286,7 @@ void startGetPose(std::shared_ptr<xv::Slam> slam)
             bool ok = slam->getPose(pose, prediction);
 
             if (ok) {
-                ++nb_ok;
+                nb_ok++;
                 static int k = 0;
                 if (k++ % 100 == 0) {
                     auto t = pose.translation();
@@ -498,11 +532,13 @@ void keypointsCallback(std::shared_ptr<const std::vector<xv::keypoint>> keypoint
     }
 }
 
-void slamkeypointsCallback(std::shared_ptr<const std::vector<xv::Pose>> keypoints)
+void slamkeypointsCallback(std::shared_ptr<const xv::HandPose> keypoints)
 {
     if(enable_output_log){
         int count = 0;
-        for (auto keypoint : *keypoints.get())
+        auto results = *keypoints;
+        std::cout << "scale: " << results.scale[0] << " " << results.scale[1] << std::endl;
+        for (auto keypoint : results.pose)
         {
             if((keypoint.x() + keypoint.y() + keypoint.z()) > 1e-3)
             {
@@ -510,7 +546,26 @@ void slamkeypointsCallback(std::shared_ptr<const std::vector<xv::Pose>> keypoint
                 count++;
             }
         }
-        std::cout << "keypoints 26Dof base on slam is : " << count << std::endl;
+        double left_timestamp = results.timestamp[0];
+        double right_timestamp = results.timestamp[1];
+        double fisheye_timestamp = results.fisheye_timestamp;
+        std::cout << "left_result interval: " << fisheye_timestamp-left_timestamp << std::endl;
+        std::cout << "right_result interval: " << fisheye_timestamp-right_timestamp << std::endl;
+        // std::cout << "keypoints 26Dof base on slam is : " << count << std::endl;
+    }
+}
+
+void objDetRKNN3588Callback(const std::vector<xv::Det2dObject>& res)
+{
+    if(enable_output_log){
+        std::cout << "******************" << std::endl;
+        for (int i=0; i<res.size(); ++i){
+            printf("obj: %d id: %i name: %s score: %f box: [%f, %f, %f, %f], keypoints_size: %li \n", 
+                    i, res[i].idx, res[i].name.c_str(), res[i].score, res[i].top, res[i].left, res[i].width, res[i].height, res[i].keypoints.size());
+            for (int j=0; j<res[i].keypoints.size(); ++j){
+                printf("x:%f y:%f z:%f \n", res[i].keypoints[j].x, res[i].keypoints[j].y, res[i].keypoints[j].z);
+            }
+        }
     }
 }
 
@@ -519,13 +574,16 @@ void gazeCallback(xv::XV_ET_EYE_DATA_EX const& gazeData)
     if(enable_output_log){
         std::cout << "enter gazeCallback" << std::endl;
         printf("xvsdk_gaze timestamp = %lld\n", gazeData.timestamp);
-        printf("xvsdk_gaze recommend = %d\n", gazeData.recommend);
+        printf("xvsdk_gaze ipd = %f\n", gazeData.ipd);
+        // printf("xvsdk_gaze recommend = %d\n", gazeData.recommend);
         printf("xvsdk_gaze leftGaze gazePoint x = %f, y = %f, z = %f\n", gazeData.leftGaze.gazePoint.x, gazeData.leftGaze.gazePoint.y, gazeData.leftGaze.gazePoint.z);
-        printf("xvsdk_gaze leftGaze rawPoint x = %f, y = %f, z = %f\n", gazeData.leftGaze.rawPoint.x, gazeData.leftGaze.rawPoint.y, gazeData.leftGaze.rawPoint.z);
-        printf("xvsdk_gaze leftGaze smoothPoint x = %f, y = %f, z = %f\n", gazeData.leftGaze.smoothPoint.x, gazeData.leftGaze.smoothPoint.y, gazeData.leftGaze.smoothPoint.z);
+        // printf("xvsdk_gaze leftGaze rawPoint x = %f, y = %f, z = %f\n", gazeData.leftGaze.rawPoint.x, gazeData.leftGaze.rawPoint.y, gazeData.leftGaze.rawPoint.z);
+        // printf("xvsdk_gaze leftGaze smoothPoint x = %f, y = %f, z = %f\n", gazeData.leftGaze.smoothPoint.x, gazeData.leftGaze.smoothPoint.y, gazeData.leftGaze.smoothPoint.z);
         printf("xvsdk_gaze rightGaze gazePoint x = %f, y = %f, z = %f\n", gazeData.rightGaze.gazePoint.x, gazeData.rightGaze.gazePoint.y, gazeData.rightGaze.gazePoint.z);
-        printf("xvsdk_gaze rightGaze rawPoint x = %f, y = %f, z = %f\n", gazeData.rightGaze.rawPoint.x, gazeData.rightGaze.rawPoint.y, gazeData.rightGaze.rawPoint.z);
-        printf("xvsdk_gaze rightGaze smoothPoint x = %f, y = %f, z = %f\n", gazeData.rightGaze.smoothPoint.x, gazeData.rightGaze.smoothPoint.y, gazeData.rightGaze.smoothPoint.z);
+        // printf("xvsdk_gaze rightGaze rawPoint x = %f, y = %f, z = %f\n", gazeData.rightGaze.rawPoint.x, gazeData.rightGaze.rawPoint.y, gazeData.rightGaze.rawPoint.z);
+        // printf("xvsdk_gaze rightGaze smoothPoint x = %f, y = %f, z = %f\n", gazeData.rightGaze.smoothPoint.x, gazeData.rightGaze.smoothPoint.y, gazeData.rightGaze.smoothPoint.z);
+        printf("xvsdk_gaze left pupil x = %f, y = %f\n", gazeData.leftPupil.pupilCenter.x, gazeData.leftPupil.pupilCenter.y);
+        printf("xvsdk_gaze right pupil x = %f, y = %f\n", gazeData.rightPupil.pupilCenter.x, gazeData.rightPupil.pupilCenter.y);
     }
 }
 
@@ -570,6 +628,40 @@ std::ostream& operator<<(std::ostream& o, const xv::PolynomialDistortionCameraMo
     return o;
 }
 
+std::ostream& operator<<(std::ostream& o, const xv::SpecialUnifiedCameraModel &m)
+{
+    o << "{";
+    o << "w=" << m.w << ", ";
+    o << "h=" << m.h << ", ";
+    o << "fx=" << m.fx << ", ";
+    o << "fy=" << m.fy << ", ";
+    o << "u0=" << m.u0 << ", ";
+    o << "v0=" << m.v0 << ", ";
+    o << "eu=" << m.eu;
+    o << "ev=" << m.ev;
+    o << "alpha=" << m.alpha;
+    o << "beta=" << m.beta;
+    o << "}";
+    return o;
+}
+
+std::ostream& operator<<(std::ostream& o, xv::CalibrationEx const& c)
+{
+    o << "Calibration:" << std::endl;
+    o << " R:" << c.pose.rotation() << std::endl;
+    o << " T: " << c.pose.translation() << std::endl;
+    for(int i=0;i<c.ucm.size();i++){
+        o << "UCM" << i << ": " << c.ucm.at(i) << std::endl;
+    }
+    for(int i=0;i<c.pdcm.size();i++){
+        o << "PDCM" << i << ": " << c.pdcm.at(i) << std::endl;
+    }
+    for(int i=0;i<c.seucm.size();i++){
+        o << "SEUCM" << i << ": " << c.seucm.at(i) << std::endl;
+    }
+    return o;
+}
+
 std::ostream& operator<<(std::ostream& o, xv::Calibration const& c)
 {
     o << "Calibration:" << std::endl;
@@ -585,6 +677,16 @@ std::ostream& operator<<(std::ostream& o, xv::Calibration const& c)
 }
 
 std::ostream& operator<<(std::ostream& o, const std::vector<xv::Calibration>& calibs)
+{
+    for (auto c : calibs) {
+        if(enable_output_log){
+            std::cout << c << std::endl;
+        }
+    }
+    return o;
+}
+
+std::ostream& operator<<(std::ostream& o, const std::vector<xv::CalibrationEx> &calibs)
 {
     for (auto c : calibs) {
         if(enable_output_log){
@@ -764,6 +866,38 @@ void GetTagDetection(std::shared_ptr<xv::FisheyeCameras> fisheye, std::string ta
                     for (auto const& d : detections) {
                         auto const& pose = d.second;
                         auto pitchYawRoll = xv::rotationToPitchYawRoll(pose.rotation());
+                        std::cout << "id=" << d.first
+                                  << " (" << pose.x() << "," << pose.y() << "," << pose.z() << ","
+                                  << pitchYawRoll[0] * 180 / M_PI << "," << pitchYawRoll[1] * 180 / M_PI << "," << pitchYawRoll[2] * 180 / M_PI << ") " << pose.confidence() << std::endl;
+                    }
+                }
+            }
+            else {
+                if(enable_output_log){
+                    std::cout << "Tag empty " << std::endl;;
+                }
+            }
+        }
+        });
+}
+
+void GetTagDetectionrgb(std::shared_ptr<xv::ColorCamera> fisheye, std::string tagDetectorId)
+{
+    stop = false;
+    tpos = std::thread ([fisheye, tagDetectorId]{
+        while (!stop) {
+            auto t0 = std::chrono::steady_clock::now();
+            std::this_thread::sleep_until(t0 + std::chrono::milliseconds(25));
+            auto detections = std::dynamic_pointer_cast<xv::ColorCameraEx>(fisheye)->getTagDetections(tagDetectorId);
+            if (!detections.empty())
+            {
+                if(enable_output_log){
+                    std::cout << "Tag detections: ";
+                    for (auto const& d : detections) {
+                        auto const& pose = d.second;
+                        auto pitchYawRoll = xv::rotationToPitchYawRoll(pose.rotation());
+                        std::string codeStr = std::dynamic_pointer_cast<xv::ColorCameraEx>(device->colorCamera())->getCode(tagDetectorId,0);
+                        printf("qr code: %s\n", codeStr.c_str());
                         std::cout << "id=" << d.first
                                   << " (" << pose.x() << "," << pose.y() << "," << pose.z() << ","
                                   << pitchYawRoll[0] * 180 / M_PI << "," << pitchYawRoll[1] * 180 / M_PI << "," << pitchYawRoll[2] * 180 / M_PI << ") " << pose.confidence() << std::endl;
@@ -1343,10 +1477,11 @@ public:
         {
             "1 : DepthOnly.       \n"
             "2 : CloudOnly.       \n"
+            "5 : CloudSlam.       \n"
             "enter select:"
         };
         int cmd_streamMode = requestCmdAllPlatform(menu_streamMode, sizeof(menu_streamMode));
-        if (cmd_streamMode < 1 || cmd_streamMode > 2)
+        if (cmd_streamMode < 1 || cmd_streamMode > 5)
         {
             cmd_streamMode = -1;
             errorMesgMenu();
@@ -1441,6 +1576,7 @@ void setTofParas(const std::shared_ptr<xv::Device> device)
         device->tofCamera()->setSonyTofSetting(tofCameraParas.getSonyTofLibMode(),
             tofCameraParas.getSonyResolution(),
             tofCameraParas.getSonyFramerate());
+        device->tofCamera()->setStreamMode(tofCameraParas.getStreamMode());
     }
     else if (tofManu == xv::TofCamera::Manufacturer::Pmd)
     {
@@ -1691,6 +1827,23 @@ void gpsDistanceDataCallback(const xv::GPSDistanceData &gpsDistanceData)
     printf("gps distance: %d, signal: %d\n", gpsDistanceData.distance, gpsDistanceData.signal);
 }
 
+void feDewarpCallback(xv::FisheyeImages const & stereo)
+{
+    static FpsCount fc;
+    fc.tic();
+    static int k = 0;
+    if(k++%50==0){
+        std::cout << "stereo dewarp "  << timeShowStr(stereo.edgeTimestampUs, stereo.hostTimestamp) << stereo.images[0].width << "x" << stereo.images[0].height << "@" << std::round(fc.fps()) << "fps" << std::endl;
+    }
+}
+
+void STMDataCallback(const xv::TerrestrialMagnetismData &stmData)
+{
+    std::cout << "STM offset data: " << stmData.offset[0] << ", " << stmData.offset[1] << ", " << stmData.offset[2] << std::endl;
+    std::cout << "STM angles data: " << stmData.angles[0] << ", " << stmData.angles[1] << ", " << stmData.angles[2] << std::endl;
+    std::cout << "STM magnetic data: " << stmData.magnetic[0] << ", " << stmData.magnetic[1] << ", " << stmData.magnetic[2] << std::endl;
+    std::cout << "STM level: " << stmData.level << std::endl;
+}
 
 bool xvhandOpenCLEnvCheck()
 {
@@ -1709,10 +1862,32 @@ bool xvhandOpenCLEnvCheck()
     return true;
 }
 
+xv::FisheyeImages s_images;
+std::mutex s_fe_mutex;
+xv::Pose s_pose;
+void Get4EyeTagDetection(xv::AprilTagDetector& detector)
+{
+    stop = false;
+    tpos = std::thread ([&detector]{
+        while (!stop) {
+            auto t0 = std::chrono::steady_clock::now();
+            std::this_thread::sleep_until(t0 + std::chrono::milliseconds(25));
+            std::vector<xv::TagPose> tags = detector.detect(s_images, 0.16);
+            std::cout << tags.size() << std::endl;
+            for(auto p : tags)
+            {
+                auto tagPose = s_pose * p.transform;
+                auto pitchYawRoll = xv::rotationToPitchYawRoll(tagPose.rotation());
+                std::cout << "tag pose: " << tagPose.x() << "," << tagPose.y() << "," << tagPose.z() << "," << pitchYawRoll[0]*180/M_PI << "," << pitchYawRoll[1]*180/M_PI << "," << pitchYawRoll[2]*180/M_PI << std::endl;
+            }
+        }
+        });
+}
+
 int main( int argc, char* argv[] ) try
 {
     // may change the log level this way :
-    std::shared_ptr<xv::Device> device = nullptr;
+    //std::shared_ptr<xv::Device> device = nullptr;
 
     std::string json = "";
     if (argc == 2) {
@@ -1816,6 +1991,12 @@ int main( int argc, char* argv[] ) try
         "101: Stop gps callback\n"
         "102: Start gps distance callback\n"
         "103: Stop gps distance callback\n"
+        "104: Start fe dewarp callback\n"
+        "105: Stop fe dewarp callback\n"
+        "109: Start STM callback\n"
+        "110: Stop STM callback\n"
+        "111: Get four eye apriltag\n"
+        "112: Get QRcode apriltag\n"
         "0 : exit program\n"
         "------------------------------\n"
         "enter select:"
@@ -1846,11 +2027,19 @@ int main( int argc, char* argv[] ) try
     int slamkeypointsId = -1;
     int sgbmId = -1;
     int gazeCallbackId = -1;
-    int GestureEXId = -1;
     int GesturePosEXId = -1;
     int deviceStatusId = -1;
     int gpsDataId = -1;
     int gpsDistanceDataId = -1;
+    int feDewarpId = -1;
+    int enrollDataId = -1;
+    int identifyDataId = -1;
+    int STMDataId = -1;
+    int objDetRKNN3588Id = -1;
+    int rgbLThermalFusionCallbackID = -1;
+    int rgbRThermalFusionCallbackID = -1;
+    int irCallbackID1 = -1;
+    int irCallbackID2 = -1;
 
 
 #ifdef _WIN32
@@ -1965,7 +2154,7 @@ int main( int argc, char* argv[] ) try
             // take the first device in the map
             device = devices.begin()->second;
 
-            xv::setLogLevel(xv::LogLevel(1));
+            xv::setLogLevel(xv::LogLevel(2));
 //            xv::registerPlugEventCallback([&](std::shared_ptr<xv::Device> d, xv::PlugEventType type){
 //                if(d->id() != device->id()){
 //                    return;
@@ -2756,7 +2945,7 @@ int main( int argc, char* argv[] ) try
             // Get Fisheye calibration
             if(enable_output_log){
                 std::cout << "Fisheye calibration:" << std::endl;
-                std::cout << device->fisheyeCameras()->calibration() << std::endl;
+                std::cout << std::dynamic_pointer_cast<xv::FisheyeCamerasEx>(device->fisheyeCameras())->calibrationEx() << std::endl;
             }
             break;
         case 45:
@@ -3272,6 +3461,8 @@ int main( int argc, char* argv[] ) try
             if(enable_output_log){
                 std::cout << "gesture start" << std::endl;
             }
+            device->gesture()->setPlatform(3, true);
+            device->gesture()->setParams(9, true);
 
             bool bOk = device->gesture()->start();
             if(enable_output_log){
@@ -3455,6 +3646,10 @@ int main( int argc, char* argv[] ) try
                 }
                 slamEx->setEnableSurfaceTexturing(false);
                 if(enable_output_log){
+                    std::cout << "call setSurfacePointCloudDecimationFactor" << std::endl;
+                }
+                slamEx->setSurfacePointCloudDecimationFactor(3);
+                if(enable_output_log){
                     std::cout << "call registerSurfaceCallback" << std::endl;
                 }
                 slamEx->registerSurfaceCallback([](std::shared_ptr<const xv::ex::Surfaces> ptr)
@@ -3482,47 +3677,47 @@ int main( int argc, char* argv[] ) try
                 device->orientationStream()->unregisterCallback(imuId);
             }
 
-            std::vector<unsigned char> vecWrite;
-            std::vector<unsigned char> vecRead;
-            bool ret;
+            // std::vector<unsigned char> vecWrite;
+            // std::vector<unsigned char> vecRead;
+            // bool ret;
 
-            vecWrite.resize(63);
-            vecWrite[0] = 0x02;
-            vecWrite[1] = 0xfe;
-            vecWrite[2] = 0x20;
-            vecWrite[3] = 0x21;
-            ret = device->hidWriteAndRead(vecWrite, vecRead);
+            // vecWrite.resize(63);
+            // vecWrite[0] = 0x02;
+            // vecWrite[1] = 0xfe;
+            // vecWrite[2] = 0x20;
+            // vecWrite[3] = 0x21;
+            // ret = device->hidWriteAndRead(vecWrite, vecRead);
 
-            if (!ret)
-            {
-                if(enable_output_log){
-                    std::cout << "hid command 21 send failed" << std::endl;
-                }
-                break;
-            }
-            else {
-                if(enable_output_log){
-                    std::cout << "send commad 02 fe 20 21 succeed" << std::endl;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(32));
-                vecWrite[0] = 0x02;
-                vecWrite[1] = 0xfe;
-                vecWrite[2] = 0x20;
-                vecWrite[3] = 0x22;
-                ret = device->hidWriteAndRead(vecWrite, vecRead);
-                if (!ret)
-                {
-                    if(enable_output_log){
-                        std::cout << "hid command 22 send failed" << std::endl;
-                    }
-                    break;
-                }
-                else {
-                    if(enable_output_log){
-                        std::cout << "send commad 02 fe 20 22 succeed" << std::endl;
-                    }
-                }
-            }
+            // if (!ret)
+            // {
+            //     if(enable_output_log){
+            //         std::cout << "hid command 21 send failed" << std::endl;
+            //     }
+            //     break;
+            // }
+            // else {
+            //     if(enable_output_log){
+            //         std::cout << "send commad 02 fe 20 21 succeed" << std::endl;
+            //     }
+            //     std::this_thread::sleep_for(std::chrono::milliseconds(32));
+            //     vecWrite[0] = 0x02;
+            //     vecWrite[1] = 0xfe;
+            //     vecWrite[2] = 0x20;
+            //     vecWrite[3] = 0x22;
+            //     ret = device->hidWriteAndRead(vecWrite, vecRead);
+            //     if (!ret)
+            //     {
+            //         if(enable_output_log){
+            //             std::cout << "hid command 22 send failed" << std::endl;
+            //         }
+            //         break;
+            //     }
+            //     else {
+            //         if(enable_output_log){
+            //             std::cout << "send commad 02 fe 20 22 succeed" << std::endl;
+            //         }
+            //     }
+            // }
 
             // get event data
             if(enable_output_log){
@@ -3599,8 +3794,10 @@ int main( int argc, char* argv[] ) try
             }
             if (device->gaze())
             {
-                bool bOk = device->gaze()->start();
-                if (bOk)
+                std::string path = "/data/local/tmp";
+                device->gaze()->setConfigPath(path);
+                bool result = device->gaze()->start();
+                if(result)
                 {
                     if(enable_output_log){
                         std::cout << "start register callback" << std::endl;
@@ -3608,11 +3805,6 @@ int main( int argc, char* argv[] ) try
                     gazeCallbackId = device->gaze()->registerCallback(gazeCallback);
                     if(enable_output_log){
                         std::cout << "gaze call back id = " << gazeCallbackId << std::endl;
-                    }
-                }
-                else {
-                    if(enable_output_log){
-                        std::cout << "gaze start failed" << std::endl;
                     }
                 }
             }
@@ -3627,82 +3819,6 @@ int main( int argc, char* argv[] ) try
                 device->gaze()->stop();
             }
             imuId = device->orientationStream()->registerCallback(orientationCallback);
-            break;
-        }
-        case 71:
-        {
-            if (device->orientationStream()) {
-                device->orientationStream()->unregisterCallback(imuId);
-            }
-            //only support android platform with gesture.
-            void* JVM;
-            // std::string password = "test";
-
-            printf("gestureEX()->start\n");
-            std::string so_path = "";
-            device->gestureEX()->start(JVM,so_path);
-            printf("gestureEX()->registerCallback\n");
-            GestureEXId = device->gestureEX()->registerCallback(GestureCallbackEX);
-            break;
-        }
-        case 72:
-        {
-            //only support android platform with gesture.
-            if(device->gestureEX()){
-                device->gestureEX()->unregisterCallback(GestureEXId);
-                device->gestureEX()->stop();
-            }
-            imuId = device->orientationStream()->registerCallback(orientationCallback);
-            break;
-        }
-        case 73:
-        {
-            if (device->orientationStream()) {
-                device->orientationStream()->unregisterCallback(imuId);
-            }
-            //only support android platform with gesture.
-            void* JVM;
-            // std::string password = "test";
-
-            std::string so_path = "";
-            device->gestureEX()->start(JVM,so_path);
-            GesturePosEXId = device->gestureEX()->registerPosCallback(GesturePosCallbackEX);
-
-            break;
-        }
-        case 74:
-        {
-            //only support android platform with gesture.
-            if(device->gestureEX()){
-                device->gestureEX()->unregisterPosCallback(GesturePosEXId);
-                device->gestureEX()->stop();
-            }
-            imuId = device->orientationStream()->registerCallback(orientationCallback);
-            break;
-        }
-        case 75:
-        {
-            if (device->orientationStream()) {
-                device->orientationStream()->unregisterCallback(imuId);
-            }
-            //only support android platform with gesture.
-            std::atomic<bool> stop(false);
-            std::thread threadLoop60Hz([&stop, &device] {
-
-                while (!stop) {
-                    auto now = std::chrono::steady_clock::now();
-                    void* JVM;
-                    // std::string password = "test";
-                    std::string so_path = "";
-                    device->gestureEX()->start(JVM,so_path);
-                    xv::Pose pos;
-                    bool feGetposeat = device->slam()->getPoseAt(pos, now.time_since_epoch().count());
-                    xv::GestureData gesture = device->gestureEX()->getGesture(pos, now.time_since_epoch().count());
-                    std::vector<xv::Pose> gesturePos = device->gestureEX()->GetGesturePose(pos, now.time_since_epoch().count());
-                    // to simulate the 60Hz loop
-                    std::this_thread::sleep_until(now + std::chrono::microseconds(long(1. / 60. * 1e6)));
-                }
-                });
             break;
         }
         case 76:
@@ -4013,9 +4129,313 @@ int main( int argc, char* argv[] ) try
             }
             break;
         }
+        case 104:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+            
+            if(device->fisheyeCameras() && device->fisheyeCameras()->checkAntiDistortionSupport())
+            {
+                device->sgbmCamera()->start(global_config);
+                device->fisheyeCameras()->start();
+                feDewarpId = device->fisheyeCameras()->registerAntiDistortionCallback(feDewarpCallback);
+            }
+            
+            break;
+        }
+        case 105:
+        {
+            if(device->fisheyeCameras())
+            {
+                device->fisheyeCameras()->stop();
+                device->sgbmCamera()->stop();
+            }
+            break;
+        }
+        // case 106:
+        // {
+        //     if(device->orientationStream()){
+        //         device->orientationStream()->unregisterCallback( imuId );
+        //     }
+
+        //     std::cout << "start iris enroll" << std::endl;
+        //     device->iris()->start();
+
+        //     device->iris()->setUserName("Xvisio");
+        //     enrollDataId = device->iris()->registerEnrollCallback(enrollCallback);
+        //     break;
+        // }
+        // case 107:
+        // {
+        //     device->iris()->UnregisterEnrollCallback(enrollDataId);
+        //     device->iris()->stop();
+        //     break;
+        // }
+        // case 108:
+        // {
+        //     if(device->orientationStream()){
+        //         device->orientationStream()->unregisterCallback( imuId );
+        //     }
+
+        //     device->iris()->start();
+        //     std::cout << "start load iris info" << std::endl;
+        //     // std::cout << "irisData.size: " << irisData.size << std::endl;
+        //     // FILE* file = fopen("./feature.txt", "r");
+        //     // unsigned char* in = (unsigned char*)malloc(6532);
+        //     // int bytes_read = fread(in, sizeof(unsigned char), 6532, file);
+        //     // std::cout << "byte read " << bytes_read << std::endl;
+        //     // std::cout <<  "load iris info" << std::endl;
+        //     // bool bOK = device->iris()->loadIrisInfo(in, 1);
+        //     bool bOK = device->iris()->loadIrisInfo(&irisData.feature[0], 1);
+        //     std::cout << "start iris identify" << std::endl;
+        //     device->iris()->registerIdentifyCallback(irisCallback);
+
+        //     break;
+        // }
+        case 109:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+            
+            if(device->terrestrialMagnetismModule())
+            {
+                device->terrestrialMagnetismModule()->start();
+                std::cout << "register STM callback" << std::endl;
+                STMDataId = device->terrestrialMagnetismModule()->registerCallback(STMDataCallback);
+            }
+
+            break;
+        }
+        case 110:
+        {
+            if(device->terrestrialMagnetismModule())
+            {
+                device->terrestrialMagnetismModule()->unregisterCallback(STMDataId);
+                device->terrestrialMagnetismModule()->stop();
+            }
+            break;
+        }
+        case 111:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+            
+            auto c = std::dynamic_pointer_cast<xv::FisheyeCamerasEx>(device->fisheyeCameras())->calibrationEx();
+            c.pop_back();
+            c.pop_back();
+            xv::AprilTagDetector detector(c);
+
+            device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+                s_fe_mutex.lock();
+                s_images.edgeTimestampUs = stereo.edgeTimestampUs;
+                s_images.hostTimestamp = stereo.hostTimestamp;
+                s_images.id = stereo.id;
+                s_images.images.resize(0);
+                s_images.images.push_back(stereo.images[0]);
+                s_images.images.push_back(stereo.images[1]);
+                s_fe_mutex.unlock();
+            });
+
+            device->fisheyeCameras()->start();
+
+            device->slam()->start();
+            device->slam()->getPoseAt(s_pose, s_images.hostTimestamp);
+
+            Get4EyeTagDetection(detector);
+
+            break;
+        }
+        case 112:
+        {
+            // Stop get IMU
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+             device->colorCamera()->start();
+                rgbId = device->colorCamera()->registerCallback(rgbCallback);
+            // if (device->fisheyeCameras()) {
+            //     iFisheyeId = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const& images) {});
+            // }
+
+            // device->fisheyeCameras()->start();
+
+            device->slam()->start(xv::Slam::Mode::Mixed);
+            //std::dynamic_pointer_cast<xv::DeviceEx>(device)->slam2()->start(xv::Slam::Mode::Edge);
+            if(enable_output_log){
+                std::cout << "start  startTagDetector" << std::endl;
+            }
+            tagDetectorId = std::dynamic_pointer_cast<xv::ColorCameraEx>(device->colorCamera())->startTagDetector(device->slam(), "36h11", 0.16, 50.);
+
+            if (!tagDetectorId.empty())
+            {
+                if(enable_output_log){
+                    std::cout << "start  GetTagDetection" << std::endl;
+                }
+                GetTagDetectionrgb(device->colorCamera(), tagDetectorId);
+            }
+            else {
+                if(enable_output_log){
+                    std::cout << "tagDetectorId is empty" << std::endl;
+                }
+            }
+            break;
+        }
+        case 113:
+        {
+            device->slam()->poseReset();
+            break;
+        }
+        case 114:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+            if(enable_output_log){
+                std::cout << "obj detector(RKNN3588) start " << std::endl;
+            }
+            device->objectDetectorRKNN3588()->setModel("objdet_config.json");
+            bool bOk = device->objectDetectorRKNN3588()->start();
+            if(enable_output_log){
+                std::cout << "obj detector(RKNN3588) register " << std::endl;
+            }
+            objDetRKNN3588Id = device->objectDetectorRKNN3588()->registerCallback(objDetRKNN3588Callback);
+            break;
+        }
+        case 115:
+        {
+            bool ok = device->objectDetectorRKNN3588()->unregisterCallback(objDetRKNN3588Id);
+            if (ok){
+                if(enable_output_log){
+                    std::cout << "unregister callback successfully" << std::endl;
+                }
+            }
+            ok = device->objectDetectorRKNN3588()->stop();
+            if (ok){
+                if(enable_output_log){
+                    std::cout << "obj detector(RKNN3588) stop successfully" << std::endl;
+                }
+            }
+
+            imuId = device->orientationStream()->registerCallback(orientationCallback);
+            std::cout << "register imu successfully" << std::endl;
+            break;
+        }
+        case 116:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+            auto deviceEX = std::dynamic_pointer_cast<xv::DeviceEx>(device);
+            deviceEX->RGB_L_ThermalFusionCamera()->start();
+            rgbLThermalFusionCallbackID = deviceEX->RGB_L_ThermalFusionCamera()->registerCallback(rgbCallback);
+            break;
+        }
+        case 117:
+        {
+            auto deviceEX = std::dynamic_pointer_cast<xv::DeviceEx>(device);
+            deviceEX->RGB_L_ThermalFusionCamera()->unregisterCallback(rgbLThermalFusionCallbackID);
+            deviceEX->RGB_L_ThermalFusionCamera()->stop();
+            break;
+        }
+        case 118:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+            auto deviceEX = std::dynamic_pointer_cast<xv::DeviceEx>(device);
+            deviceEX->RGB_R_ThermalFusionCamera()->start();
+            rgbRThermalFusionCallbackID = deviceEX->RGB_R_ThermalFusionCamera()->registerCallback(rgb2Callback);
+            break;
+        }
+        case 119:
+        {
+            auto deviceEX = std::dynamic_pointer_cast<xv::DeviceEx>(device);
+            deviceEX->RGB_R_ThermalFusionCamera()->unregisterCallback(rgbRThermalFusionCallbackID);
+            deviceEX->RGB_R_ThermalFusionCamera()->stop();
+            break;
+        }
+        case 120:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+            std::array<float, 3> buffer = {0.0, 0.0, 1.0};
+            auto deviceEX = std::dynamic_pointer_cast<xv::DeviceEx>(device);
+            deviceEX->RGB_L_ThermalFusionCamera()->writeRGBThermalFusionParams(buffer);
+            deviceEX->RGB_R_ThermalFusionCamera()->writeRGBThermalFusionParams(buffer);
+            break;
+        }
+        case 121:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+
+            volatile static double lastTimestamp1 = 0;
+            volatile static int64_t lastEdge1 = 0;
+            device->irTrackingCamera()->start();
+            irCallbackID1 = device->irTrackingCamera()->registerCallback([](xv::IrTrackingImage const& irtracking)
+            {
+                static FpsCount fc;
+                fc.tic();
+                static int k1 = 0;
+                if (k1++ % 15 == 0) {
+                    std::cout << "ir1 hosttimestamp: " << irtracking.hostTimestamp << ", last timestamp: " << lastTimestamp1 << ", cost: " << irtracking.hostTimestamp-lastTimestamp1 << " seconds" << std::endl;
+                    std::cout << "ir1 edgetimestamp: " << irtracking.deviceTimestamp << ", last timestamp: " << lastEdge1 << ", cost: " << irtracking.deviceTimestamp-lastEdge1 << " seconds" << std::endl;
+                    std::cout << "ir1 fps " << fc.fps() << std::endl; 
+                }
+                lastTimestamp1 = irtracking.hostTimestamp;
+                lastEdge1 = irtracking.deviceTimestamp;
+            });
+            break;
+        }
+        case 122:
+        {
+            device->irTrackingCamera()->unregisterCallback(irCallbackID1);
+            device->irTrackingCamera()->stop();
+
+            break;
+        }
+        case 123:
+        {
+            if(device->orientationStream()){
+                device->orientationStream()->unregisterCallback( imuId );
+            }
+            
+            volatile static double lastTimestamp2 = 0;
+            volatile static int64_t lastEdge2 = 0;
+            device->irTrackingCamera()->startCamera2();
+            irCallbackID2 = device->irTrackingCamera()->registerCamera2Callback([](xv::IrTrackingImage const& irtracking)
+            {
+                static FpsCount fc;
+                fc.tic();
+                static int k2 = 0;
+                if (k2++ % 15 == 0) {
+                    std::cout << "ir2 hosttimestamp: " << irtracking.hostTimestamp << ", last timestamp: " << lastTimestamp2 << ", cost: " << irtracking.hostTimestamp-lastTimestamp2 << " seconds" << std::endl;
+                    std::cout << "ir2 edgetimestamp: " << irtracking.deviceTimestamp << ", last timestamp: " << lastEdge2 << ", cost: " << irtracking.deviceTimestamp-lastEdge2 << " seconds" << std::endl;
+                    std::cout << "ir2 fps " << std::round(fc.fps()) << std::endl; 
+                }
+                lastTimestamp2 = irtracking.hostTimestamp;
+                lastEdge2 = irtracking.deviceTimestamp;
+            });
+            break;
+        }
+        case 124:
+        {
+            device->irTrackingCamera()->unregisterCamera2Callback(irCallbackID2);
+            device->irTrackingCamera()->stopCamera2();
+            break;
+        }
         default:
             printf("bad command\n");
-            break;
         }
     }
     stop = true;

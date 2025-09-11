@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structxv_1_1UcmCameraCalibration.html" title="Calibration parameters of a camera using Unified Camera Model for camera intrinsics." alt="" coords="5,5,203,32"/>
+<area shape="rect" id="node1" href="$classxv_1_1Stream.html" title=" " alt="" coords="5,5,219,32"/>
+<area shape="rect" id="node2" href="$classxv_1_1EventStream.html" title="A class to handle callbacks of events." alt="" coords="267,5,397,32"/>
 </map>

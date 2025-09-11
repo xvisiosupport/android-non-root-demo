@@ -7,4 +7,4 @@ APP_ABI := armeabi-v7a arm64-v8a
 
 APP_STL := c++_shared
 APP_CPPFLAGS := -fexceptions -frtti -std=c++11
-APP_LDFLAGS := -llog
+APP_LDFLAGS := -llog -fuse-ld=gold
