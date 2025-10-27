@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "fps_count.hpp"
+#include <opencv2/opencv.hpp>
 
 #define LOG_TAG "xslam#wrapper"
 #define LOG_DEBUG(...)                                                \
@@ -586,7 +587,7 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
 
     m_ready = true;
     usleep(2000 * 1000);
-    LOG_DEBUG("nAddUsbDevice inited");
+    LOG_DEBUG("nAddUsbDevice inited opencv version:%s", cv::getVersionString().c_str());
 }
 
 extern "C" JNIEXPORT void JNICALL
