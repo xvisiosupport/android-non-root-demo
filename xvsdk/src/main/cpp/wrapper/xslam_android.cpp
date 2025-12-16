@@ -17,6 +17,7 @@
 #include <math.h>
 #include <xv-sdk.h>
 #include <xv-sdk-ex.h>
+#include <xv-sdk-private.h>
 #include "unity-wrapper.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -430,6 +431,53 @@ void startTofStream() {
     device->tofCamera()->start();
 }
 
+
+std::shared_ptr<xv::StereoRectificationMesh> xv_stereo_rectification_mesh1 = nullptr;
+std::shared_ptr<xv::StereoRectificationMesh> xv_stereo_rectification_mesh2 = nullptr;
+
+void dump_image(std::vector<xv::GrayScaleImage> images)
+{
+    for(int i=0; i<images.size(); i++)
+    {
+        cv::Mat mat;
+        mat.create(images[i].height, images[i].width, CV_8UC1);
+        std::memcpy(mat.data, images[i].data.get(), images[i].height*images[i].width);
+        cv::imwrite("/sdcard/rectify/" + std::to_string(i) + ".png", mat);
+    }
+}
+
+std::vector<xv::GrayScaleImage> rectiry(const xv::FisheyeImages& stereo_images) {
+    const std::size_t image_width = stereo_images.images.at(0).width;
+    const std::size_t image_height = stereo_images.images.at(0).height;
+    if (xv_stereo_rectification_mesh1 == nullptr) {
+        const std::vector<xv::Calibration> calibration = device->fisheyeCameras()->calibration();
+        std::vector<xv::Calibration> calib1;
+        calib1.push_back(calibration[0]);
+        calib1.push_back(calibration[1]);
+        xv_stereo_rectification_mesh1 = std::make_shared<xv::StereoRectificationMesh>(calib1, image_width, image_height);
+        if (xv_stereo_rectification_mesh2 == nullptr && calibration.size() == 4) {
+            std::vector<xv::Calibration> calib2;
+            calib2.push_back(calibration[2]);
+            calib2.push_back(calibration[3]);
+            xv_stereo_rectification_mesh2 = std::make_shared<xv::StereoRectificationMesh>(calib2, image_width, image_height);
+        }
+    }
+
+    std::vector<xv::GrayScaleImage> rectified_images;
+    const std::pair<xv::GrayScaleImage, xv::GrayScaleImage> result1 = xv_stereo_rectification_mesh1->rectify(stereo_images.images.at(0), stereo_images.images.at(1));
+    rectified_images.push_back(result1.first);
+    rectified_images.push_back(result1.second);
+
+    if (stereo_images.images.size() == 4 && xv_stereo_rectification_mesh2) {
+        const std::pair<xv::GrayScaleImage, xv::GrayScaleImage> result2 = xv_stereo_rectification_mesh2->rectify(stereo_images.images.at(2), stereo_images.images.at(3));
+        rectified_images.push_back(result2.first);
+        rectified_images.push_back(result2.second);
+    }
+
+    dump_image(rectified_images);
+    return rectified_images;
+}
+
 void onStrereoCallback(xv::FisheyeImages const &stereo) {
     JNIEnv *jniEnv;
     jvm->AttachCurrentThread(&jniEnv, NULL);
@@ -438,7 +486,6 @@ void onStrereoCallback(xv::FisheyeImages const &stereo) {
     }
 
     jvm->AttachCurrentThread(&jniEnv, NULL);
-
     if (s_stereoCallback) {
         int w = stereo.images[0].width;
         int h = stereo.images[0].height;

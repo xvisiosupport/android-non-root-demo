@@ -800,6 +800,18 @@ public:
      */
     virtual void setConfigPath(std::string config) = 0;
 
+    /**
+     * @brief enable dump iris files.
+     */
+    virtual void enableDump(bool enable) = 0;
+
+    /**
+     * @brief Set iris configuration parameters.
+     *
+     * @param[in] configs xv::IrisConfig value, end with "/"
+     */
+    virtual void setIrisConfigs(xv::IrisConfig configs) = 0;
+
     virtual ~IrisStream() {}
 };
 
