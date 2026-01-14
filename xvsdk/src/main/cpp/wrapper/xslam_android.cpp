@@ -635,6 +635,63 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
     m_ready = true;
     usleep(2000 * 1000);
     LOG_DEBUG("nAddUsbDevice inited opencv version:%s", cv::getVersionString().c_str());
+
+#if false
+    xv::setLogLevel(xv::LogLevel::debug);
+    device->imuSensor()->registerCallback([](xv::Imu const & imu){
+        static FpsCount fc;
+        static int count = 0;
+
+        fc.tic();
+        if (count++ % 2000 == 1) {
+            LOG_DEBUG("imu fps:%.1f", fc.fps());
+        }
+    });
+
+    device->fisheyeCameras()->start();
+    device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+        static FpsCount fc;
+        static int count = 0;
+
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("fisheye fps:%.1f", fc.fps());
+        }
+    });
+
+    device->colorCamera()->start();
+    device->colorCamera()->registerCallback([](xv::ColorImage const & tof){
+        static FpsCount fc;
+        static int count = 0;
+
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("rgb1 fps:%.1f", fc.fps());
+        }
+    });
+
+    device->colorCamera()->startCameras();
+    device->colorCamera()->registerCam2Callback([](xv::ColorImage const & tof){
+        static FpsCount fc;
+        static int count = 0;
+
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("rgb2 fps:%.1f", fc.fps());
+        }
+    });
+
+    device->tofCamera()->start();
+    device->tofCamera()->registerCallback([](xv::DepthImage const & tof){
+        static FpsCount fc;
+        static int count = 0;
+
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("tof fps:%.1f", fc.fps());
+        }
+    });
+#endif
 }
 
 extern "C" JNIEXPORT void JNICALL

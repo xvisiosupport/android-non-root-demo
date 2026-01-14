@@ -256,12 +256,6 @@ public:
    virtual bool getFisheyeCalibrationFromFile(std::vector<CalibrationEx>& fisheyeCalib, double& imuFisheyeTimestampOffset);
 
     virtual bool writeThermalCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
-    virtual bool writeIrTrackingCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
-    virtual bool writeIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&){ return false;}
-
-    virtual bool readDisplayIpdParas(std::array<float, 10>& buf){ return false;}
-    virtual bool writeDisplayIpdParas(const std::array<float, 10>& buf){ return false;}
-
    /**
     * @brief Provide a SLAM without IMU data.
     */

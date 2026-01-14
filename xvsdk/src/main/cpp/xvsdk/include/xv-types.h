@@ -6,7 +6,8 @@
 #include <limits>
 #include <string>
 #include <memory>
-
+#include <functional>
+#include <array>
 #if defined(__ANDROID__) && !defined(__x86_64__)
 #define __XV_DRIVER_ONLY__
 #endif
@@ -29,6 +30,7 @@ enum class SlamStartMode {
     Normal,
     VisionOnly,
     VisionWithGYRO
+    // RKDRIVER
 };
 
 enum DeviceSupport {
@@ -36,6 +38,7 @@ enum DeviceSupport {
     ONLYDRIVER,
     USBANDDRIVER,
     ONLY_WIRELESS_CONTROLLER
+    // RKDRIVER
 };
 
 
@@ -1042,22 +1045,49 @@ struct RgbImage {
     RgbImage(std::size_t _width, std::size_t _height, std::shared_ptr<const std::uint8_t> _data) : width(_width), height(_height),data(_data) {}
 };
 
+struct RgbExternalMem
+{
+    void* y_plane;
+    void* u_plane;
+    void* v_plane;
+};
+
 /**
  * @brief A color image given by #xv::ColorCamera
  */
 struct ColorImage {
-    enum class Codec { YUYV = 0, YUV420p, JPEG, NV12, BITSTREAM};
+    enum class Codec { YUYV = 0, YUV420p, JPEG, NV12, H264, H265, MJPG, BITSTREAM};
     Codec codec = Codec::YUYV;
     std::size_t width = 0; //!< width of the image (in pixel)
     std::size_t height = 0; //!< height of the image (in pixel)
     std::shared_ptr<const std::uint8_t> data = nullptr; //! image data
     unsigned int dataSize = 0;
     double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
+    std::int64_t hostRecievedTimestampUs = 0; //!<Timestamp in µs recieved on host
     std::int64_t edgeTimestampUs = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
+    unsigned short vst_x = 0;
+    unsigned short vst_y = 0;
+    bool isExtMem = false;
+    int extMemIndex = -1;
+    RgbExternalMem extMem;
+
     /**
      * @brief Convert to a #xv::RgbImage
      */
     RgbImage toRgb() const;
+};
+
+struct VstImages
+{
+    ColorImage images[2];
+};
+
+enum class VST_IMAGE_FORMAT
+{
+    H264,
+    H265,
+    MJPEG,
+    NONE
 };
 
 /**
@@ -1268,15 +1298,6 @@ struct ThermalImage {
     // unsigned int dataSize = 0;
     // double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
     // std::int64_t edgeTimestampUs = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
-};
-
-struct IrTrackingImage {
-    enum class Codec {UYVY};
-    std::size_t width = 0; //!< width of the image (in pixel)
-    std::size_t height = 0; //!< height of the image (in pixel)
-    std::shared_ptr<const std::uint8_t> data;
-    double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
-    std::int64_t deviceTimestamp = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
 };
 
 /**
@@ -1657,8 +1678,6 @@ struct WirelessControllerDeviceInformation
 {
     uint8_t battery;            // 1 bytes
     uint8_t temp;               // 1 bytes
-    uint8_t sleep;
-    uint8_t charging;
 };
 
 struct GazeConfigs
@@ -1676,60 +1695,38 @@ struct GazeConfigs
     int hiValue;
 };
 
-struct ResolutionParam
+enum VST_DEVICE_TYPE
 {
-    int width = -1;
-    int height = -1;
+    F40A,
+    F40B
 };
 
-struct RoiParam
+struct VstRgbExternalMemGroup
 {
-    int x;
-    int y;
-    int width;
-    int height;
+    std::array<RgbExternalMem, 2> externalMem;
+    int width = 0;
+    int height = 0;
+    uint32_t y_row_pitch;
+    uint32_t uv_row_pitch;
+    bool isEnableRowPitch = false;
+    std::function<int(int type)> start_check;
 };
 
-struct ExposureParam
+struct SlamMapInfo
 {
-    unsigned int time; // The unit is microseconds.
-    float gain;
+    uint8_t index;
+    uint8_t total;
+    int32_t time;
+    int32_t size;
+    char name[40];
 };
 
-struct IrTrackingTemperature
+struct ApriltagData
 {
-    int one;
-    int two;
-};
-
-struct IRIS_PARAMS{
-    int eyes;
-    int quality;
-    int eye_expo;
-};
-
-struct CAM_CONFIG{
-    float focal_length;
-    float pixel_size;
-    float obj_distance;
-    int pupil_radius_min;
-    int pupil_radius_max;
-    int iris_radius_min;
-    int iris_radius_max;
-};
-
-struct GAZE_ANGLE{
-    float x_angle;
-    float y_angle;
-    float z_angle;
-};
-
-struct IrisConfig
-{
-    IRIS_PARAMS irisParams;
-    CAM_CONFIG cameraParams;
-    GAZE_ANGLE leftAngle;
-    GAZE_ANGLE rightAngle;
+    int status;
+    int id;
+    double hostTimestmap;
+    xv::Pose pose;
 };
 
 }

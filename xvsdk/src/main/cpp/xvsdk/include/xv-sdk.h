@@ -172,7 +172,7 @@ public:
     virtual bool unregisterAntiDistortionCallback( int callbackID ) = 0;
 
     virtual bool checkAntiDistortionSupport() = 0;
-    virtual bool getExposure(ExposureParam& param) = 0;
+
     virtual ~FisheyeCameras(){}
 };
 
@@ -219,6 +219,11 @@ public:
         RGB_320x240   = 3,  ///< RGB QVGA (not supported now)
         RGB_2560x1920 = 4,  ///< RGB 5m (not supported now)
         RGB_3840x2160 = 5,
+        RGB_2048x1536 = 6,
+        RGB_2312x1736 = 7,  ///< RGB 4M
+        RGB_1296x1416_4K = 8, ///< 4K crop
+        RGB_1296x1416_down_sample_4K = 9, ///< down sample + 4K
+        RGB_2880x3072 = 10, ///< 4K
     };
 
     enum class Mode {
@@ -241,9 +246,82 @@ public:
     virtual bool unregisterCam2Callback( int callbackID ) = 0;
     virtual const std::vector<Calibration>& calibration2() = 0;
     virtual bool checkCam2Support() = 0;
-    virtual bool getExposure(ExposureParam& param) = 0;
 
     virtual ~ColorCamera(){}
+};
+
+class TofCamera;
+/**
+ * @brief A class to handle callbacks of the  VST camera image.
+ */
+class VstCamera : virtual public Stream<ColorImage
+ const &>, virtual public Camera  {
+public:
+    enum class VstResolution
+    {
+        LOW_RESOLUTION,
+        MEDIUM_RESOLUTION,
+        HIGHT_RESOLUTION
+    };
+    virtual ~VstCamera(){}
+    virtual int registerVstImagesCallback(std::function<void (VstImages const &)> c ) = 0;
+    virtual bool unregisterVstImagesCallback(int id) = 0;
+
+    virtual int registerVstLeftImageCallback(std::function<void (ColorImage const &)> c ) = 0;
+    virtual bool unregisterVstLeftImageCallback(int id) = 0;
+
+    virtual int registerVstRightImageCallback(std::function<void (ColorImage const &)> c ) = 0;
+    virtual bool unregisterVstRightImageCallback(int id) = 0;
+    
+    virtual bool vstHidWriteAndRead(const std::vector<unsigned char> &command, std::vector<unsigned char> &result, int deviceType = 0) = 0;
+    virtual void setVstTimeSynchronization(bool enable) = 0;
+    virtual const std::vector<Calibration>& calibration(int deviceType) = 0;
+    virtual bool setResolution(const ColorCamera::Resolution &resolution ) = 0;
+    virtual bool setResolution(const VstResolution resolution) = 0;
+    virtual std::shared_ptr<TofCamera> getVstSubTof() = 0;
+
+    virtual bool startDeviceStatus() = 0;
+    virtual bool stopDeviceStatus() = 0;
+    virtual int registerF40aDeviceStatus( std::function<void (std::vector<unsigned char> const&)> deviceStatusCallback) = 0;
+    virtual bool unregisterF40aDeviceStatus( int callbackId ) = 0;
+    virtual int registerF40bDeviceStatus( std::function<void (std::vector<unsigned char> const&)> deviceStatusCallback) = 0;
+    virtual bool unregisterF40bDeviceStatus( int callbackId ) = 0;
+    /**
+     * @brief Get the current device type.
+     * @return  -1 means no device, 
+     *           0 means there is currently only f40a device，
+     *           1 represents that there is currently only f40b device
+     *           2 means that both f40a and f40b devices currently exist.
+     */
+    virtual int getDeviceStatus() = 0;
+    virtual bool setGazeToVst(const Vector3d &gaze) = 0;
+    virtual bool setGazeToVst(const Vector2d &p2d, int deviceType) = 0;
+    virtual bool setSyncTime(int time) = 0;
+    virtual int getSyncTime() = 0;
+    virtual std::shared_ptr<ColorCamera> getVstSubRgb(enum VST_DEVICE_TYPE type) = 0;
+    virtual bool registerVstExternalMem(const VstRgbExternalMemGroup& group_0, const VstRgbExternalMemGroup& group_1) = 0;
+    virtual void controlLog(bool enable) = 0;
+    virtual void setMasterCamera(int type) = 0;
+    virtual std::shared_ptr<Device> getVstDevicePtrByVid(const VST_DEVICE_TYPE& type) = 0;
+    virtual VST_IMAGE_FORMAT getVstImageFormat() = 0;
+    virtual bool setVstImageFormat(VST_IMAGE_FORMAT type) = 0;
+    virtual double getVstHostTimestamp(std::int64_t edgeTimestampUs, std::int64_t hostRecievedTimestampUs) = 0;
+    virtual void enableDecode(bool enable) = 0;
+    virtual bool future() = 0;
+    virtual bool isConnect() = 0;
+    virtual bool isMasterConnect() = 0;
+    virtual bool closeMasterUsb() = 0;
+}; 
+/**
+ * @brief A class to handle callbacks of the  ipd.
+ */
+class IPD
+{
+public:
+    virtual float readIPD_Param(void) = 0;
+    virtual bool writeIPD_Param(float param) = 0;
+    virtual bool calibrate() = 0;
+    virtual ~IPD() {}
 };
 
 /**
@@ -343,10 +421,6 @@ public:
     */
     virtual void setFilterFile(std::string filePath) = 0;
 
-    virtual void enableIrGamma(bool enable) = 0;
-
-    virtual bool isEnableIrGamma() = 0;
-
     virtual ~TofCamera() {}
 };
 
@@ -384,6 +458,7 @@ public:
      */
     virtual bool reset() = 0;
 
+    virtual bool resetVIO() = 0;
     /**
      * @brief Pause the 6dof tracker (SLAM)
      * @return return true if well pause, else if something went wrong.
@@ -482,6 +557,9 @@ public:
      * 3D points from the reference map.
      */
     virtual bool loadMapAndSwitchToCslam(std::streambuf& mapStream, std::function<void(int /* status of load map */)> done_callback, std::function<void(float)> localized_on_reference_map={}) = 0;
+    
+    virtual bool loadMapAndSwitchToCslam(const std::string& file) = 0;
+
     /**
      * @brief Save a SLAM map and use it as an immutable reference map.
      *
@@ -494,6 +572,11 @@ public:
      */
     virtual bool saveMapAndSwitchToCslam(std::streambuf& mapStream, std::function<void(int /* status of save map */, int /* map quality */)> done_callback, std::function<void(float)> localized_on_reference_map={}) = 0;
 
+    virtual bool saveMapAndSwitchToCslam(const std::string& file) = 0;
+
+    virtual std::vector<SlamMapInfo> getMaps() = 0 ;
+
+    virtual bool deleteMap(const std::string& file) = 0 ;
     /**
      * @brief slam pose scale calibration.
      *
@@ -506,12 +589,6 @@ public:
      * @brief Reset the 6dof pose coordinate (SLAM)
      */
     virtual void poseReset() = 0;
-
-    /**
-     * @brief set slam mode
-     * @param mode 0 for 6dof, 1 for 3dof
-     */
-    virtual void poseSetMode(int mode) = 0;
 	
 	virtual int registerSharedMapCallback(std::function<void (std::vector<uint8_t> const&)> cb) = 0;
     
@@ -594,58 +671,6 @@ public:
 };
 
 /**
- * @brief A class to handle callbacks of the IR tracking camera.
- */
-class IrTrackingCamera : virtual public Stream<IrTrackingImage const &>, virtual public Camera {
-public:
-    /**
-     * @brief start camera2 streaming.
-     */
-    virtual bool startCamera2() = 0;
-    /**
-     * @brief stop camera2 streaming.
-     */
-    virtual bool stopCamera2() = 0;
-
-    /**
-     * @brief Register callback to receive data.
-     */
-    virtual int registerCamera2Callback(std::function<void (IrTrackingImage const&  )>) = 0;
-    /**
-     * @brief Unregister callback.
-     */
-    virtual bool unregisterCamera2Callback(int callbackId) = 0;
-
-    virtual ~IrTrackingCamera() {}
-
-    virtual int getFrameRate() = 0;
-    virtual bool getResolution(ResolutionParam& param) = 0;
-    virtual bool getROI(RoiParam& param) = 0;
-    virtual bool getTemperature(IrTrackingTemperature& temperatures) = 0;
-    /**
-     * @brief Get ir tracking camera(1 and 2) exposure time,the unit is microseconds.
-     * @return if error will return -1.
-     */
-    virtual int getExposureTime() = 0;
-    /**
-     * @brief Set ir tracking camera(1 and 2) exposure time. 
-     * @param timeUs ,exposure time, the unit is microseconds，range is 16 μs to 22800 μs
-     */
-    virtual bool setExposureTime(int time) = 0;
-
-    /**
-     * @brief Enable IR tracking camera led. 
-     */
-    virtual bool enableLed(int index, bool enable) = 0;
-    
-    /**
-     * @brief Set IR tracking camera led working time.
-     * @param time , The unit is ms. The min value is 0, the max value is 1ms.
-     */
-    virtual bool setLedTime(int index, float time) = 0;
-};
-
-/**
  * @brief A class to handle callbacks of the eyetracking camera.
  */
 class EyetrackingCamera : virtual public Stream<EyetrackingImage const &>, virtual public Camera {
@@ -714,7 +739,7 @@ public:
      */
     virtual void enableDump(bool enable) = 0;
 
-     /**
+    /**
      * @brief set to pref data to gaze.
      */
     virtual int setPref(int et_idx, uint8_t *data, int size ) = 0;
@@ -748,6 +773,13 @@ public:
      * @brief set gaze mode
      */
     virtual void setGazeMode(int mode) = 0;
+
+         /**
+     * @brief get ipd value.
+     */
+    virtual float getGazeIpd() = 0;
+
+    virtual int getFrameIndex() = 0;
 
     virtual ~GazeStream() {}
 };
@@ -799,18 +831,6 @@ public:
      * @param[in] config string value, end with "/"
      */
     virtual void setConfigPath(std::string config) = 0;
-
-    /**
-     * @brief enable dump iris files.
-     */
-    virtual void enableDump(bool enable) = 0;
-
-    /**
-     * @brief Set iris configuration parameters.
-     *
-     * @param[in] configs xv::IrisConfig value, end with "/"
-     */
-    virtual void setIrisConfigs(xv::IrisConfig configs) = 0;
 
     virtual ~IrisStream() {}
 };
@@ -914,6 +934,16 @@ public:
    virtual void resumeLastPose(xv::Pose pose) = 0;
 
    virtual ~ExternalStream() {}
+};
+
+/**
+ * @brief A class to handle apriltag stream data.
+ */
+class ApriltagStream : virtual public Stream<ApriltagData const &>{ 
+public:
+
+    virtual bool start(float size) = 0;
+    virtual ~ApriltagStream() {}
 };
 
 /**
@@ -1423,11 +1453,6 @@ public:
     virtual std::shared_ptr<ThermalCamera> thermalCamera() = 0;
 
     /**
-     * @brief Get the ir tracking camera component of the device.
-     */
-    virtual std::shared_ptr<IrTrackingCamera> irTrackingCamera() = 0;
-    
-    /**
      * @brief Get the eyetracking component of the device.
      */
     virtual std::shared_ptr<EyetrackingCamera> eyetracking() = 0;
@@ -1468,6 +1493,11 @@ public:
     virtual std::shared_ptr<ExternalStream> externalSensor() = 0;
 
     /**
+     * @brief Get the apriltag stream component.
+     */
+    virtual std::shared_ptr<ApriltagStream> apriltag() = 0;
+
+    /**
      * @brief Get the MIC component of the device.
      */
     virtual std::shared_ptr<MicStream> mic() = 0;
@@ -1497,13 +1527,24 @@ public:
      */
     virtual std::shared_ptr<DeviceStatusStream> deviceStatus() = 0;
 
-        /**
+    virtual int getVscThreadId() = 0;
+
+    /**
+     * @brief Get the device status component.
+     */
+    virtual std::shared_ptr<VstCamera> vstCamera() = 0;
+
+    /**
+     * @brief Get the IPD component.
+     */
+    virtual std::shared_ptr<IPD> ipd() = 0;
+
+     /**
      * @brief Get the device wireless controller.
      */
     virtual std::shared_ptr<WirelessController> wirelessController() = 0;
 
     virtual std::shared_ptr<BeiDouGPS> beiDouGPS() = 0;
-
     /**
      * @brief Let device sleep.
      */
@@ -1950,6 +1991,7 @@ public:
      * @brief Return the serial number of the device.
      */
     virtual std::string id() const = 0;
+
 
     virtual ~Device(){}
 

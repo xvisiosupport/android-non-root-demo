@@ -274,9 +274,6 @@ public:
     virtual bool setEyetrackingCalibration(const std::vector<Calibration>&) = 0;
     virtual bool setThermalCalibration(const std::vector<CalibrationEx>&) = 0;
 
-    virtual bool setIrTrackingCameraCalibration(const std::vector<CalibrationEx>&) = 0;
-    virtual bool setIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&) = 0;
-
     virtual bool setImuOffset( int offset ) = 0;
     virtual bool setImuMode( int mode ) = 0;
 
@@ -770,6 +767,15 @@ public:
 
 };
 
+
+class VstCameraEx : public VstCamera
+{
+public:
+    virtual ~VstCameraEx(){};
+    virtual bool writeCalibration(const std::vector<CalibrationEx> & c, int deviceType = 0) = 0;
+    virtual const std::vector<CalibrationEx>& calibrationEx(int deviceType) = 0;
+};
+
 /**
  * @brief Compute the pixel shift to go from tracker pose p0 to tracker pose p1
  *
@@ -808,12 +814,6 @@ public:
 class ThermalCameraEX : public ThermalCamera {
 public:
     virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
-};
-
-class IrTrackingCameraEX : public IrTrackingCamera {
-public:
-    virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
-    virtual const std::vector<CalibrationEx>& calibrationEx2() = 0;
 };
 
 namespace ex {
