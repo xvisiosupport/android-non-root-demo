@@ -4,6 +4,6 @@ set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
 
 SET(LIBS ${LIBS} xslam-xv-sdk opencv_java4)
 
-target_link_libraries(xslam_wrapper log ${LIBS})
+target_link_libraries(xslam_wrapper log c++_shared ${LIBS})
 
 install(TARGETS xslam_wrapper DESTINATION lib)

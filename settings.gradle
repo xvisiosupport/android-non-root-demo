@@ -1,2 +1,2 @@
-include ':app', ':xvsdk', ':landmode'
+include ':app', ':xvsdk'
 rootProject.name='xslam-demo'

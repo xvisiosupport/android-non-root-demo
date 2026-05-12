@@ -626,13 +626,16 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
     LOG_DEBUG("nAddUsbDevice fd: %d", fd);
 
     device = xv::getDevice(fd);
-    xv::setLogLevel(xv::LogLevel(0));
+    xv::setLogLevel(xv::LogLevel::info);
     if (!device) {
         LOG_DEBUG("nAddUsbDevice getDevice FAIL");
         return;
     }
 
     m_ready = true;
+    device->imuSensor()->registerCallback([](xv::Imu const & imu) {
+
+    });
     usleep(2000 * 1000);
     LOG_DEBUG("nAddUsbDevice inited opencv version:%s", cv::getVersionString().c_str());
 
@@ -692,6 +695,220 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
         }
     });
 #endif
+}
+
+std::string SAVE_HOME = "";
+const long long MAX_RECORD_TIME = 30*60;
+static bool g_recording = false;
+static long long g_start_time = 0L;
+static int g_slam_cb = -1;
+static int g_fisheye_cb = -1;
+static int g_rgb1_cb = -1;
+static int g_rgb2_cb = -1;
+
+std::ofstream g_rgb1_out_stream;
+std::ofstream g_rgb2_out_stream;
+std::ofstream g_fisheye_out_stream;
+std::ofstream g_slam_out_stream;
+
+static void stopSaveData()
+{
+    if(g_slam_cb >= -1)
+    {
+        device->slam()->unregisterCallback(g_slam_cb);
+        g_slam_cb = -1;
+    }
+    g_slam_out_stream.close();
+
+    if(g_fisheye_cb >= -1)
+    {
+        device->fisheyeCameras()->stop();
+        device->fisheyeCameras()->unregisterCallback(g_fisheye_cb);
+        g_fisheye_cb = -1;
+    }
+    g_fisheye_out_stream.close();
+
+    if(g_rgb1_cb >= -1)
+    {
+        device->colorCamera()->stop();
+        device->colorCamera()->unregisterCallback(g_rgb1_cb);
+        g_rgb1_cb = -1;
+    }
+    g_rgb1_out_stream.close();
+
+    if(g_rgb2_cb >= -1)
+    {
+        device->colorCamera()->stop();
+        device->colorCamera()->unregisterCam2Callback(g_rgb2_cb);
+        g_rgb2_cb = -1;
+    }
+    g_rgb2_out_stream.close();
+}
+
+static void startSaveData()
+{
+    std::string cmd = "rm -rf " + SAVE_HOME + "/*";
+    system(cmd.c_str());
+
+    g_start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    std::time_t now = std::time(nullptr);
+    std::tm utc_tm;
+    gmtime_r(&now, &utc_tm);
+    char date[128] = {0};
+    sprintf(date, "%04d-%02d-%02d-%02d-%02d-%02d",
+            utc_tm.tm_year+1900, utc_tm.tm_mon+1, utc_tm.tm_mday, utc_tm.tm_hour, utc_tm.tm_min, utc_tm.tm_sec);
+    std::string SAVE_DIR = SAVE_HOME + "/" + (std::string)date;
+    std::string SAVE_RGB1_DIR = SAVE_DIR + "/RGB_Left";
+    std::string SAVE_RGB2_DIR = SAVE_DIR + "/RGB_Right";
+    std::string SAVE_FISHEYE_DIR = SAVE_DIR + "/Fisheye";
+    std::string SAVE_SLAM_DIR = SAVE_DIR + "/Slam";
+
+    mkdir(SAVE_HOME.c_str(), 0777);
+    mkdir(SAVE_DIR.c_str(), 0777);
+    mkdir(SAVE_RGB1_DIR.c_str(), 0777);
+    mkdir(SAVE_RGB2_DIR.c_str(), 0777);
+    mkdir(SAVE_FISHEYE_DIR.c_str(), 0777);
+    mkdir(SAVE_SLAM_DIR.c_str(), 0777);
+
+    g_rgb1_out_stream = std::ofstream(SAVE_RGB1_DIR + "/Rgb_left_1600_1200_30.mjpg", std::ios::binary | std::ios::app);
+    g_rgb2_out_stream = std::ofstream(SAVE_RGB2_DIR + "/Rgb_right_1600_1200_30.mjpg", std::ios::binary | std::ios::app);
+    g_fisheye_out_stream = std::ofstream(SAVE_FISHEYE_DIR + "/fisheye_640_480_30_4_gray.raw", std::ios::binary | std::ios::app);
+    g_slam_out_stream = std::ofstream(SAVE_SLAM_DIR + "/slam.txt", std::ios::app);
+    if(g_slam_out_stream)
+    {
+        std::string header = "confidence,timestamp,x,y,z,q0,q1,q2,q3";
+        g_slam_out_stream << header;
+        g_slam_out_stream << std::endl;
+    }
+    g_slam_cb = device->slam()->registerCallback([](xv::Pose const & pose){
+        static FpsCount fc;
+        static int count = 0;
+
+        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        if(now > g_start_time + MAX_RECORD_TIME)
+        {
+            return;
+        }
+
+        if(g_recording && g_slam_out_stream)
+        {
+            auto q = xv::rotationToQuaternion(pose.rotation());
+            char buf[256] = {0};
+            sprintf(buf, "%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+                    pose.confidence(), pose.hostTimestamp(), pose.x(), pose.y(), pose.z(),
+                    q[0], q[1], q[2], q[3]);
+            g_slam_out_stream << buf;
+            g_slam_out_stream << std::endl;
+            g_slam_out_stream.flush();
+        }
+        fc.tic();
+        if (count++ % 2000 == 1) {
+            LOG_DEBUG("slam fps:%.1f", fc.fps());
+        }
+    });
+
+    device->fisheyeCameras()->start();
+    g_fisheye_cb = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+        static FpsCount fc;
+        static int count = 0;
+
+        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        if(now > g_start_time + MAX_RECORD_TIME)
+        {
+            return;
+        }
+
+        if(g_recording && g_fisheye_out_stream) {
+            for (int i = 0; i < stereo.images.size(); i++) {
+                g_fisheye_out_stream.write(
+                        reinterpret_cast<const char *>(stereo.images[i].data.get()),
+                        stereo.images[i].width * stereo.images[i].height);
+            }
+            g_fisheye_out_stream.flush();
+        }
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("fisheye fps:%.1f", fc.fps());
+        }
+    });
+
+    device->colorCamera()->start();
+    g_rgb1_cb = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
+        static FpsCount fc;
+        static int count = 0;
+
+        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        if(now > g_start_time + MAX_RECORD_TIME)
+        {
+            return;
+        }
+
+        if(g_recording && g_rgb1_out_stream) {
+            g_rgb1_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
+            g_rgb1_out_stream.flush();
+        }
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("rgb1 fps:%.1f", fc.fps());
+        }
+    });
+
+    device->colorCamera()->startCameras();
+    g_rgb2_cb = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
+        static FpsCount fc;
+        static int count = 0;
+
+        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        if(now > g_start_time + MAX_RECORD_TIME)
+        {
+            return;
+        }
+
+        if(g_recording && g_rgb2_out_stream) {
+            g_rgb2_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
+            g_rgb2_out_stream.flush();
+        }
+        fc.tic();
+        if (count++ % 30 == 1) {
+            LOG_DEBUG("rgb2 fps:%.1f", fc.fps());
+        }
+    });
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_xvisio_xvsdk_XCamera_nSaveData(JNIEnv *env, jclass type,
+                                           jstring path, jboolean status) {
+    if (!device) {
+        return false;
+    }
+
+    if (path != nullptr)
+    {
+        const char* chars = env->GetStringUTFChars(path, nullptr);
+        if (chars != nullptr)
+        {
+            std::string result(chars);
+            env->ReleaseStringUTFChars(path, chars);
+            SAVE_HOME = result + "/xv_save";
+        }
+    }
+
+    LOG_DEBUG("switch to nSaveData %d", status);
+    if(g_recording == status)
+    {
+        return g_recording;
+    }
+
+    g_recording = status;
+    if(g_recording)
+    {
+        startSaveData();
+    }
+    else
+    {
+        stopSaveData();
+    }
+    return g_recording;
 }
 
 extern "C" JNIEXPORT void JNICALL

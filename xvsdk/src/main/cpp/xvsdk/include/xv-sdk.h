@@ -172,7 +172,7 @@ public:
     virtual bool unregisterAntiDistortionCallback( int callbackID ) = 0;
 
     virtual bool checkAntiDistortionSupport() = 0;
-
+    virtual bool getExposure(ExposureParam& param) = 0;
     virtual ~FisheyeCameras(){}
 };
 
@@ -244,8 +244,13 @@ public:
     virtual bool setCamsFramerate(float framerate, int camIndex = 1) = 0;
     virtual int registerCam2Callback(std::function<void (ColorImage const &)> c ) = 0;
     virtual bool unregisterCam2Callback( int callbackID ) = 0;
+    virtual bool registerH265HardwareDecoder(
+        std::function<bool(const ColorImage&, std::shared_ptr<uint8_t>&)> hook) = 0;
+    virtual bool unregisterH265HardwareDecoder() = 0;
     virtual const std::vector<Calibration>& calibration2() = 0;
     virtual bool checkCam2Support() = 0;
+    virtual bool getExposure(ExposureParam& param) = 0;
+    virtual bool checkSeucmSupport() = 0;
 
     virtual ~ColorCamera(){}
 };
@@ -336,6 +341,7 @@ public:
     enum class Resolution{ Unknown = -1,VGA = 0 ,QVGA ,HQVGA};
     enum class Manufacturer {Unknown = -1, Pmd = 0, Sony};
     enum class ColorDepthBase { RGB = 0, TOF = 1 };
+    enum class Mode { Edge = 0, Mixed };
     
     virtual bool setColorDepthBase(ColorDepthBase base) = 0;
     virtual ColorDepthBase getColoerDepthBase() = 0;
@@ -420,6 +426,10 @@ public:
      * @brief set SonyTof filter file
     */
     virtual void setFilterFile(std::string filePath) = 0;
+
+    virtual void enableIrGamma(bool enable) = 0;
+
+    virtual bool isEnableIrGamma() = 0;
 
     virtual ~TofCamera() {}
 };
@@ -671,6 +681,58 @@ public:
 };
 
 /**
+ * @brief A class to handle callbacks of the IR tracking camera.
+ */
+class IrTrackingCamera : virtual public Stream<IrTrackingImage const &>, virtual public Camera {
+public:
+    /**
+     * @brief start camera2 streaming.
+     */
+    virtual bool startCamera2() = 0;
+    /**
+     * @brief stop camera2 streaming.
+     */
+    virtual bool stopCamera2() = 0;
+
+    /**
+     * @brief Register callback to receive data.
+     */
+    virtual int registerCamera2Callback(std::function<void (IrTrackingImage const&  )>) = 0;
+    /**
+     * @brief Unregister callback.
+     */
+    virtual bool unregisterCamera2Callback(int callbackId) = 0;
+
+    virtual ~IrTrackingCamera() {}
+
+    virtual int getFrameRate() = 0;
+    virtual bool getResolution(ResolutionParam& param) = 0;
+    virtual bool getROI(RoiParam& param) = 0;
+    virtual bool getTemperature(IrTrackingTemperature& temperatures) = 0;
+    /**
+     * @brief Get ir tracking camera(1 and 2) exposure time,the unit is microseconds.
+     * @return if error will return -1.
+     */
+    virtual int getExposureTime() = 0;
+    /**
+     * @brief Set ir tracking camera(1 and 2) exposure time. 
+     * @param timeUs ,exposure time, the unit is microseconds，range is 16 μs to 22800 μs
+     */
+    virtual bool setExposureTime(int time) = 0;
+
+    /**
+     * @brief Enable IR tracking camera led. 
+     */
+    virtual bool enableLed(int index, bool enable) = 0;
+    
+    /**
+     * @brief Set IR tracking camera led working time.
+     * @param time , The unit is ms. The min value is 0, the max value is 1ms.
+     */
+    virtual bool setLedTime(int index, float time) = 0;
+};
+
+/**
  * @brief A class to handle callbacks of the eyetracking camera.
  */
 class EyetrackingCamera : virtual public Stream<EyetrackingImage const &>, virtual public Camera {
@@ -873,6 +935,8 @@ public:
 
     virtual bool setPlatform( int platform , bool ego) = 0;
     virtual bool setParams( int filter_level , bool easy_pinch) = 0;
+    virtual bool setfisheyeParams( bool is_pcvr) = 0;
+    virtual bool setfisheyeIndex( int left, int right) = 0;
 };
 
 /**
@@ -987,6 +1051,14 @@ public:
     virtual bool unregisterPlayEndCallback( int callbackId ) = 0;
 
     virtual ~Speaker() {}
+};
+
+/**
+ * @brief A class to handle callbacks of the clamp data.
+ */
+class ClampStream : virtual public Stream<xv::ClampData const &>{
+public:
+    virtual ~ClampStream() {}
 };
 
 /**
@@ -1453,6 +1525,11 @@ public:
     virtual std::shared_ptr<ThermalCamera> thermalCamera() = 0;
 
     /**
+     * @brief Get the ir tracking camera component of the device.
+     */
+    virtual std::shared_ptr<IrTrackingCamera> irTrackingCamera() = 0;
+    
+    /**
      * @brief Get the eyetracking component of the device.
      */
     virtual std::shared_ptr<EyetrackingCamera> eyetracking() = 0;
@@ -1545,6 +1622,12 @@ public:
     virtual std::shared_ptr<WirelessController> wirelessController() = 0;
 
     virtual std::shared_ptr<BeiDouGPS> beiDouGPS() = 0;
+
+    /**
+     * @brief Get the GPS data of the device.
+     */
+    virtual std::shared_ptr<ClampStream> clampModule() = 0;
+
     /**
      * @brief Let device sleep.
      */

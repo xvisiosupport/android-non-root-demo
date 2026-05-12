@@ -1300,6 +1300,15 @@ struct ThermalImage {
     // std::int64_t edgeTimestampUs = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
 };
 
+struct IrTrackingImage {
+    enum class Codec {UYVY};
+    std::size_t width = 0; //!< width of the image (in pixel)
+    std::size_t height = 0; //!< height of the image (in pixel)
+    std::shared_ptr<const std::uint8_t> data;
+    double hostTimestamp = std::numeric_limits<double>::infinity(); //!< host timestamp of the physical measurement (in second based on the `std::chrono::steady_clock`).
+    std::int64_t deviceTimestamp = (std::numeric_limits<std::int64_t>::min)(); //!< timestamp of the physical measurement (in microsecond based on edge clock).
+};
+
 /**
  * @brief A color image given by #xv::EyetrackingCamera
  */
@@ -1618,16 +1627,23 @@ struct TerrestrialMagnetismData
     int level;
 };
 
+struct HandRay{
+    Pose pose = Pose::Identity();
+    double origin[3] = {0,0,0};
+    double direction[3] = {0,0,0};
+};
 /**
  * @brief new hand pose struct.
  */
 struct HandPose{
     std::vector<Pose> pose; // 26 + 26
+    HandRay ray[2];
     float scale[2];   // 1 + 1
     int status[2] = {-1,-1};
     double timestamp[2];
     double fisheye_timestamp;
 };
+
 
 struct ExternalData {
     int             tv_sec;
@@ -1693,6 +1709,37 @@ struct GazeConfigs
     float etOccupy;
     float ftFoclen;
     int hiValue;
+};
+
+struct ResolutionParam
+{
+    int width = -1;
+    int height = -1;
+};
+
+struct RoiParam
+{
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+struct ExposureParam
+{
+    unsigned int time; // The unit is microseconds.
+    float gain;
+};
+
+struct IrTrackingTemperature
+{
+    int one;
+    int two;
+};
+
+struct ClampData {
+    uint64_t timestamp;
+    double data;
 };
 
 enum VST_DEVICE_TYPE

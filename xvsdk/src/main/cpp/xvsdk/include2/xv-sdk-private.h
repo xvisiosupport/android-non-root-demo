@@ -256,6 +256,13 @@ public:
    virtual bool getFisheyeCalibrationFromFile(std::vector<CalibrationEx>& fisheyeCalib, double& imuFisheyeTimestampOffset);
 
     virtual bool writeThermalCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
+    virtual bool writeIrTrackingCameraCalibration(const std::vector<CalibrationEx>&){ return false;}
+    virtual bool writeIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&){ return false;}
+
+    virtual bool readDisplayIpdParas(std::array<float, 10>& buf){ return false;}
+
+    virtual bool writeDisplayIpdParas(const std::array<float, 10>& buf){ return false;}
+
    /**
     * @brief Provide a SLAM without IMU data.
     */
@@ -388,11 +395,18 @@ private:
 class RgbRectificationMesh {
     ImageWarpMesh mesh;
 
+    int x_offset = 0;
+    int y_offset = 0;
+
 public:
     RgbRectificationMesh(std::vector<xv::Calibration> const& calib, std::size_t w, std::size_t h);
     // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, bool useUcm=true);
     // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, double focal, double baseline);
     // RgbRectificationMesh(std::vector<xv::Calibration> const& calib, std::vector<xv::Calibration> const& displayCalib);
+
+    //x_offset: Number of pixels to crop from both the left and right side of the iamge
+    //y_offset: Number of pixels to crop from both the top and bottom side of the iamge
+    RgbRectificationMesh(std::vector<xv::Calibration> const& calib, std::size_t w, std::size_t h, int x_offset, int y_offset);
 
     xv::RgbImage rectify(const xv::ColorImage &img) const;
 
@@ -409,7 +423,7 @@ public:
 
     // ImageWarpMesh const& leftWarp() const;
     // ImageWarpMesh const& rightWarp() const;
-
+    
 private:
     // double m_baseline = -1e9;
     double m_focal = -1e9;

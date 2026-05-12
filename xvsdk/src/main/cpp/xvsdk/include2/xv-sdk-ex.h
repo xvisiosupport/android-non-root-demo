@@ -274,6 +274,9 @@ public:
     virtual bool setEyetrackingCalibration(const std::vector<Calibration>&) = 0;
     virtual bool setThermalCalibration(const std::vector<CalibrationEx>&) = 0;
 
+    virtual bool setIrTrackingCameraCalibration(const std::vector<CalibrationEx>&) = 0;
+    virtual bool setIrTrackingCamera2Calibration(const std::vector<CalibrationEx>&) = 0;
+
     virtual bool setImuOffset( int offset ) = 0;
     virtual bool setImuMode( int mode ) = 0;
 
@@ -649,6 +652,8 @@ public:
      * @return the QR code text encoded in the TagDetection with id
      */
     std::string getCode(std::string const& detectorId, int id) const;
+
+    virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
 };
 
 /**
@@ -809,11 +814,19 @@ public:
     virtual std::vector<std::shared_ptr<CameraModel>> camerasModel() {
             return {};
     }
+    virtual bool readDisplayIpdParas(std::array<float, 10>& buf){ return false;}
+
 };
 
 class ThermalCameraEX : public ThermalCamera {
 public:
     virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
+};
+
+class IrTrackingCameraEX : public IrTrackingCamera {
+public:
+    virtual const std::vector<CalibrationEx>& calibrationEx() = 0;
+    virtual const std::vector<CalibrationEx>& calibrationEx2() = 0;
 };
 
 namespace ex {

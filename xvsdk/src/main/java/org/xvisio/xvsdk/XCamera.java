@@ -210,6 +210,8 @@ public class XCamera extends XVisioClass {
 
     private static native void nAddUsbDevice(String deviceName, int fileDescriptor);
 
+    public static native boolean nSaveData(String path, boolean save);
+
     private static native void nRemoveUsbDevice(int fileDescriptor);
 
     private static native void nSetRgbSolution(int mode);
