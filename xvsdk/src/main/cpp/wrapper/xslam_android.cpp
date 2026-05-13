@@ -182,6 +182,13 @@ static FpsCount g_fisheye_fc;
 static FpsCount g_rgb1_fc;
 static FpsCount g_rgb2_fc;
 
+static std::mutex g_fisheye_mtx;
+static std::mutex g_rgb1_mtx;
+static std::mutex g_rgb2_mtx;
+static xv::FisheyeImages g_fisheye_img;
+static xv::ColorImage g_rgb1_img;
+static xv::ColorImage g_rgb2_img;
+
 std::ofstream g_rgb1_out_stream;
 std::ofstream g_rgb2_out_stream;
 std::ofstream g_fisheye_out_stream;
@@ -667,19 +674,27 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
     });
 
     device->fisheyeCameras()->start();
-    device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+    int cb1 = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+        std::lock_guard<std::mutex> lock(g_fisheye_mtx);
+        g_fisheye_img = stereo;
         g_fisheye_fc.tic();
     });
 
     device->colorCamera()->start();
-    device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
+    int cb2 = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
+        std::lock_guard<std::mutex> lock(g_rgb1_mtx);
+        g_rgb1_img = rgb;
         g_rgb1_fc.tic();
     });
 
     device->colorCamera()->startCameras();
-    device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
+    int cb3 = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
+        std::lock_guard<std::mutex> lock(g_rgb2_mtx);
+        g_rgb2_img = rgb;
         g_rgb2_fc.tic();
     });
+
+    LOG_DEBUG("nAddUsbDevice registerCallback %d, %d, %d", cb1, cb2, cb3);
 }
 
 extern "C" JNIEXPORT jint JNICALL
@@ -842,6 +857,101 @@ static void startSaveData()
 extern "C" JNIEXPORT jboolean JNICALL
 Java_org_xvisio_xvsdk_XCamera_isReady(JNIEnv *env, jclass type) {
     return m_ready && device != nullptr;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_xvisio_xvsdk_XCamera_getFisheyeImage(JNIEnv *env, jclass type, jobject buffer) {
+
+    std::uint8_t *out_ptr = static_cast<unsigned char *>(env->GetDirectBufferAddress(buffer));
+    xv::FisheyeImages stereo;
+    {
+        std::lock_guard<std::mutex> lock(g_fisheye_mtx);
+        stereo = g_fisheye_img;
+    }
+
+    if(out_ptr == nullptr || stereo.images.empty())
+    {
+        return 0;
+    }
+
+    std::vector<cv::Mat> mats(stereo.images.size());
+    for(size_t k = 0 ; k < stereo.images.size() ; ++k)
+    {
+        cv::Mat mat;
+        mat.create(stereo.images[k].height,stereo.images[k].width,CV_8UC1);
+        std::memcpy(mat.data, stereo.images[k].data.get(), stereo.images[k].height*stereo.images[k].width);
+        mats[k] = mat;
+    }
+
+    cv::Mat gray;
+    cv::Mat mat_h1;
+    cv::Mat mat_h2;
+    cv::hconcat(mats[0], mats[1], mat_h1);
+    cv::hconcat(mats[2], mats[3], mat_h2);
+    cv::vconcat(mat_h1, mat_h2, gray);
+
+    cv::Size scale_size(640, 480);
+    cv::Mat scale_img;
+    cv::resize(gray, scale_img, scale_size, 0.5, 0.5, cv::INTER_AREA);
+    memcpy(out_ptr, scale_img.data, 640*480);
+    return 640*480;
+}
+
+int getRgbBuffer(std::uint8_t *buffer, xv::ColorImage &rgb)
+{
+    std::vector<uchar> buf(const_cast<unsigned char*>(rgb.data.get()), const_cast<unsigned char*>(rgb.data.get()) + rgb.dataSize);
+    cv::Mat image = cv::imdecode(buf, cv::IMREAD_COLOR);
+
+    cv::Size scale_size(640, 480);
+    cv::Mat scale_img;
+    cv::resize(image, scale_img, scale_size, 0.4, 0.4, cv::INTER_AREA);
+//    std::vector<uint8_t> output;
+//    std::vector<int> params;
+//    params.push_back(cv::IMWRITE_JPEG_QUALITY);
+//    params.push_back(90);
+//    cv::imencode(".jpg", scale_img, output, params);
+//    memcpy(buffer, output.data(), output.size());
+//    return (int)output.size();
+    cv::Mat result;
+    cv::cvtColor(scale_img, result, cv::COLOR_BGR2RGBA);
+    memcpy(buffer, result.data, 640*480*4);
+    return 640*480*4;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_xvisio_xvsdk_XCamera_getRgb1Image(JNIEnv *env, jclass type, jobject buffer) {
+
+    std::uint8_t *out_ptr = static_cast<unsigned char *>(env->GetDirectBufferAddress(buffer));
+    xv::ColorImage rgb;
+    {
+        std::lock_guard<std::mutex> lock(g_rgb1_mtx);
+        rgb = g_rgb1_img;
+    }
+
+    if(out_ptr == nullptr || rgb.data == nullptr || rgb.dataSize == 0)
+    {
+        return 0;
+    }
+
+    return getRgbBuffer(out_ptr, rgb);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_xvisio_xvsdk_XCamera_getRgb2Image(JNIEnv *env, jclass type, jobject buffer) {
+
+    std::uint8_t *out_ptr = static_cast<unsigned char *>(env->GetDirectBufferAddress(buffer));
+    xv::ColorImage rgb;
+    {
+        std::lock_guard<std::mutex> lock(g_rgb2_mtx);
+        rgb = g_rgb2_img;
+    }
+
+    if(out_ptr == nullptr || rgb.data == nullptr || rgb.dataSize == 0)
+    {
+        return 0;
+    }
+
+    return getRgbBuffer(out_ptr, rgb);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL

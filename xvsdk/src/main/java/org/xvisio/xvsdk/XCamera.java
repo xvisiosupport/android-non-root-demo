@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.util.Log;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -218,6 +219,10 @@ public class XCamera extends XVisioClass {
 
     public static native int getRecordTime();
 
+    public static native int getFisheyeImage(ByteBuffer buffer);
+
+    public static native int getRgb1Image(ByteBuffer buffer);
+    public static native int getRgb2Image(ByteBuffer buffer);
     private static native void nRemoveUsbDevice(int fileDescriptor);
 
     private static native void nSetRgbSolution(int mode);
