@@ -167,6 +167,26 @@ static const xv::sgbm_config sgbm_config
                 100,
         };
 
+
+std::string SAVE_HOME = "";
+const long long MAX_RECORD_TIME = 60*60; // seconds
+static bool g_recording = false;
+static long long g_start_time = 0L;
+static int g_slam_cb = -1;
+static int g_fisheye_cb = -1;
+static int g_rgb1_cb = -1;
+static int g_rgb2_cb = -1;
+
+static FpsCount g_slam_fc;
+static FpsCount g_fisheye_fc;
+static FpsCount g_rgb1_fc;
+static FpsCount g_rgb2_fc;
+
+std::ofstream g_rgb1_out_stream;
+std::ofstream g_rgb2_out_stream;
+std::ofstream g_fisheye_out_stream;
+std::ofstream g_slam_out_stream;
+
 void onImuCallback(xv::Imu const &imu) {
     JNIEnv *jniEnv;
     jvm->AttachCurrentThread(&jniEnv, NULL);
@@ -631,85 +651,86 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
         LOG_DEBUG("nAddUsbDevice getDevice FAIL");
         return;
     }
+    LOG_DEBUG("nAddUsbDevice inited opencv version:%s", cv::getVersionString().c_str());
 
     m_ready = true;
     device->imuSensor()->registerCallback([](xv::Imu const & imu) {
 
     });
-    usleep(2000 * 1000);
-    LOG_DEBUG("nAddUsbDevice inited opencv version:%s", cv::getVersionString().c_str());
 
-#if false
-    xv::setLogLevel(xv::LogLevel::debug);
     device->imuSensor()->registerCallback([](xv::Imu const & imu){
-        static FpsCount fc;
-        static int count = 0;
 
-        fc.tic();
-        if (count++ % 2000 == 1) {
-            LOG_DEBUG("imu fps:%.1f", fc.fps());
-        }
+    });
+
+    device->slam()->registerCallback([](xv::Pose const & pose){
+        g_slam_fc.tic();
     });
 
     device->fisheyeCameras()->start();
     device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
-        static FpsCount fc;
-        static int count = 0;
-
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("fisheye fps:%.1f", fc.fps());
-        }
+        g_fisheye_fc.tic();
     });
 
     device->colorCamera()->start();
-    device->colorCamera()->registerCallback([](xv::ColorImage const & tof){
-        static FpsCount fc;
-        static int count = 0;
-
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("rgb1 fps:%.1f", fc.fps());
-        }
+    device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
+        g_rgb1_fc.tic();
     });
 
     device->colorCamera()->startCameras();
-    device->colorCamera()->registerCam2Callback([](xv::ColorImage const & tof){
-        static FpsCount fc;
-        static int count = 0;
-
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("rgb2 fps:%.1f", fc.fps());
-        }
+    device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
+        g_rgb2_fc.tic();
     });
-
-    device->tofCamera()->start();
-    device->tofCamera()->registerCallback([](xv::DepthImage const & tof){
-        static FpsCount fc;
-        static int count = 0;
-
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("tof fps:%.1f", fc.fps());
-        }
-    });
-#endif
 }
 
-std::string SAVE_HOME = "";
-const long long MAX_RECORD_TIME = 30*60;
-static bool g_recording = false;
-static long long g_start_time = 0L;
-static int g_slam_cb = -1;
-static int g_fisheye_cb = -1;
-static int g_rgb1_cb = -1;
-static int g_rgb2_cb = -1;
+extern "C" JNIEXPORT jint JNICALL
+Java_org_xvisio_xvsdk_XCamera_getFps(JNIEnv *env, jclass type, jint stream) {
+    double fps = 0;
+    switch(stream) {
+        case 1:
+            fps = std::round(g_slam_fc.fps());
+            break;
 
-std::ofstream g_rgb1_out_stream;
-std::ofstream g_rgb2_out_stream;
-std::ofstream g_fisheye_out_stream;
-std::ofstream g_slam_out_stream;
+        case 2:
+            fps = std::round(g_fisheye_fc.fps());
+            break;
+
+        case 3:
+            fps = std::round(g_rgb1_fc.fps());
+            break;
+
+        case 4:
+            fps = std::round(g_rgb2_fc.fps());
+            break;
+
+        default:
+            break;
+    }
+    return (jint)fps;
+}
+
+bool isRecording()
+{
+    if(!g_recording)
+    {
+        return false;
+    }
+
+    long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    int time = now - g_start_time;
+    return time < MAX_RECORD_TIME;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_xvisio_xvsdk_XCamera_getRecordTime(JNIEnv *env, jclass type) {
+    long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    int time = now - g_start_time;
+    if(!g_recording)
+    {
+        return 0;
+    }
+
+    return (jint)(time < MAX_RECORD_TIME ? time : MAX_RECORD_TIME);
+}
 
 static void stopSaveData()
 {
@@ -722,7 +743,6 @@ static void stopSaveData()
 
     if(g_fisheye_cb >= -1)
     {
-        device->fisheyeCameras()->stop();
         device->fisheyeCameras()->unregisterCallback(g_fisheye_cb);
         g_fisheye_cb = -1;
     }
@@ -730,7 +750,6 @@ static void stopSaveData()
 
     if(g_rgb1_cb >= -1)
     {
-        device->colorCamera()->stop();
         device->colorCamera()->unregisterCallback(g_rgb1_cb);
         g_rgb1_cb = -1;
     }
@@ -738,11 +757,11 @@ static void stopSaveData()
 
     if(g_rgb2_cb >= -1)
     {
-        device->colorCamera()->stop();
         device->colorCamera()->unregisterCam2Callback(g_rgb2_cb);
         g_rgb2_cb = -1;
     }
     g_rgb2_out_stream.close();
+    g_start_time = 0;
 }
 
 static void startSaveData()
@@ -781,16 +800,7 @@ static void startSaveData()
         g_slam_out_stream << std::endl;
     }
     g_slam_cb = device->slam()->registerCallback([](xv::Pose const & pose){
-        static FpsCount fc;
-        static int count = 0;
-
-        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        if(now > g_start_time + MAX_RECORD_TIME)
-        {
-            return;
-        }
-
-        if(g_recording && g_slam_out_stream)
+        if(isRecording() && g_slam_out_stream)
         {
             auto q = xv::rotationToQuaternion(pose.rotation());
             char buf[256] = {0};
@@ -801,24 +811,10 @@ static void startSaveData()
             g_slam_out_stream << std::endl;
             g_slam_out_stream.flush();
         }
-        fc.tic();
-        if (count++ % 2000 == 1) {
-            LOG_DEBUG("slam fps:%.1f", fc.fps());
-        }
     });
 
-    device->fisheyeCameras()->start();
     g_fisheye_cb = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
-        static FpsCount fc;
-        static int count = 0;
-
-        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        if(now > g_start_time + MAX_RECORD_TIME)
-        {
-            return;
-        }
-
-        if(g_recording && g_fisheye_out_stream) {
+        if(isRecording() && g_fisheye_out_stream) {
             for (int i = 0; i < stereo.images.size(); i++) {
                 g_fisheye_out_stream.write(
                         reinterpret_cast<const char *>(stereo.images[i].data.get()),
@@ -826,53 +822,26 @@ static void startSaveData()
             }
             g_fisheye_out_stream.flush();
         }
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("fisheye fps:%.1f", fc.fps());
-        }
     });
 
-    device->colorCamera()->start();
     g_rgb1_cb = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
-        static FpsCount fc;
-        static int count = 0;
-
-        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        if(now > g_start_time + MAX_RECORD_TIME)
-        {
-            return;
-        }
-
-        if(g_recording && g_rgb1_out_stream) {
+        if(isRecording() && g_rgb1_out_stream) {
             g_rgb1_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
             g_rgb1_out_stream.flush();
         }
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("rgb1 fps:%.1f", fc.fps());
-        }
     });
 
-    device->colorCamera()->startCameras();
     g_rgb2_cb = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
-        static FpsCount fc;
-        static int count = 0;
-
-        long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        if(now > g_start_time + MAX_RECORD_TIME)
-        {
-            return;
-        }
-
-        if(g_recording && g_rgb2_out_stream) {
+        if(isRecording() && g_rgb2_out_stream) {
             g_rgb2_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
             g_rgb2_out_stream.flush();
         }
-        fc.tic();
-        if (count++ % 30 == 1) {
-            LOG_DEBUG("rgb2 fps:%.1f", fc.fps());
-        }
     });
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_xvisio_xvsdk_XCamera_isReady(JNIEnv *env, jclass type) {
+    return m_ready && device != nullptr;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -889,8 +858,17 @@ Java_org_xvisio_xvsdk_XCamera_nSaveData(JNIEnv *env, jclass type,
         {
             std::string result(chars);
             env->ReleaseStringUTFChars(path, chars);
-            SAVE_HOME = result + "/xv_save";
+            if (!result.empty())
+            {
+                SAVE_HOME = result + "/xv_save";
+            }
         }
+    }
+
+    if(SAVE_HOME.empty())
+    {
+        LOG_DEBUG("get sdcard FAIL!");
+        return false;
     }
 
     LOG_DEBUG("switch to nSaveData %d", status);
