@@ -105,14 +105,44 @@
                 app:layout_constraintLeft_toRightOf="@+id/tv_rgb1"
                 />
 
+            <TextView
+                android:id="@+id/tv_gesture"
+                android:text="gesture: 0fps"
+                android:textSize="20dp"
+                android:layout_marginLeft="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/tv_rgb2"
+                app:layout_constraintLeft_toRightOf="@+id/tv_rgb2"
+                />
+
+            <TextView
+                android:id="@+id/tv_pose"
+                android:text="pose: "
+                android:textSize="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/tv_slam"
+                app:layout_constraintLeft_toLeftOf="@+id/tv_slam"
+                />
+
+            <TextView
+                android:id="@+id/tv_gesture_data"
+                android:text="gesture: "
+                android:textSize="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/tv_pose"
+                app:layout_constraintLeft_toLeftOf="@+id/tv_pose"
+                />
+
             <ImageView
                 android:id="@+id/iv_fisheye"
                 android:layout_width="640px"
                 android:layout_height="480px"
                 android:layout_marginTop="20dp"
-                app:layout_constraintTop_toBottomOf="@+id/tv_slam"
+                app:layout_constraintTop_toBottomOf="@+id/tv_gesture_data"
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:srcCompat="@color/colorAccent"
                 />
             <ImageView
                 android:id="@+id/iv_rgb1"
@@ -120,7 +150,6 @@
                 android:layout_height="480px"
                 app:layout_constraintTop_toTopOf="@+id/iv_fisheye"
                 app:layout_constraintLeft_toRightOf="@+id/iv_fisheye"
-                app:srcCompat="@color/colorAccent"
                 />
 
             <ImageView
@@ -129,7 +158,6 @@
                 android:layout_height="480px"
                 app:layout_constraintTop_toTopOf="@+id/iv_fisheye"
                 app:layout_constraintLeft_toRightOf="@+id/iv_rgb1"
-                app:srcCompat="@color/colorAccent"
                 />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>

@@ -42,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     TextView m_tvFisheyeFps;
     TextView m_tvRgb1Fps;
     TextView m_tvRgb2Fps;
+    TextView m_tvGestureFps;
+    TextView m_tvPose;
+    TextView m_tvGestureData;
 
     ImageView m_ivFisheye;
     ImageView m_ivRgb1;
@@ -89,13 +92,15 @@ public class MainActivity extends AppCompatActivity {
     };
 
     void updateUI() {
-        if (mUpdateCount % 10 == 0) {
+        if (mUpdateCount % 3 == 0) {
             m_CheckBoxSave.setTextColor(XCamera.isReady() ? Color.GREEN : Color.RED);
             m_CheckBoxSave.setEnabled(XCamera.isReady());
             int seconds = XCamera.getRecordTime();
             String time = String.format("time: %02d:%02d", seconds / 60, seconds % 60);
             m_tvSaveTime.setText(time);
+        }
 
+        if (mUpdateCount % 15 == 0) {
             String slamFps = "slam: " + XCamera.getFps(1) + "fps";
             m_tvSlamFps.setText(slamFps);
 
@@ -107,20 +112,27 @@ public class MainActivity extends AppCompatActivity {
 
             String rgb2Fps = "rgb2: " + XCamera.getFps(4) + "fps";
             m_tvRgb2Fps.setText(rgb2Fps);
+
+            String gestureFps = "gesture: " + XCamera.getFps(5) + "fps";
+            m_tvGestureFps.setText(gestureFps);
         }
 
-        if (mUpdateCount % 3 == 0) {
-            if (XCamera.getFisheyeImage(m_fisheyeBuffer) > 0) {
-                drawGrayImage(m_ivFisheye, m_fisheyeBuffer);
-            }
-        } else if (mUpdateCount % 3 == 1) {
-            if (XCamera.getRgb1Image(m_rgb1Buffer) > 0) {
-                drawRgbImage(m_ivRgb1, m_rgb1Buffer);
-            }
-        } else if (mUpdateCount % 3 == 2) {
-            if (XCamera.getRgb2Image(m_rgb2Buffer) > 0) {
-                drawRgbImage(m_ivRgb2, m_rgb2Buffer);
-            }
+        String pose = "pose: " + XCamera.getPose();
+        m_tvPose.setText(pose);
+
+        String gesture = "gesture: " + XCamera.getGesture();
+        m_tvGestureData.setText(gesture);
+
+        if (XCamera.getFisheyeImage(m_fisheyeBuffer) > 0) {
+            drawGrayImage(m_ivFisheye, m_fisheyeBuffer);
+        }
+
+        if (XCamera.getRgb1Image(m_rgb1Buffer) > 0) {
+            drawRgbImage(m_ivRgb1, m_rgb1Buffer);
+        }
+
+        if (XCamera.getRgb2Image(m_rgb2Buffer) > 0) {
+            drawRgbImage(m_ivRgb2, m_rgb2Buffer);
         }
     }
 
@@ -174,6 +186,9 @@ public class MainActivity extends AppCompatActivity {
         m_tvFisheyeFps = findViewById(R.id.tv_fisheye);
         m_tvRgb1Fps = findViewById(R.id.tv_rgb1);
         m_tvRgb2Fps = findViewById(R.id.tv_rgb2);
+        m_tvGestureFps = findViewById(R.id.tv_gesture);
+        m_tvPose = findViewById(R.id.tv_pose);
+        m_tvGestureData = findViewById(R.id.tv_gesture_data);
         m_ivFisheye = findViewById(R.id.iv_fisheye);
         m_ivRgb1 = findViewById(R.id.iv_rgb1);
         m_ivRgb2 = findViewById(R.id.iv_rgb2);
@@ -193,8 +208,13 @@ public class MainActivity extends AppCompatActivity {
                     compoundButton.setChecked(false);
                     return;
                 }
-                boolean ret = XCamera.nSaveData(mSdcardPath, b);
-                compoundButton.setChecked(ret);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        XCamera.nSaveData(mSdcardPath, b);
+                    }
+                }).start();
             }
         });
 

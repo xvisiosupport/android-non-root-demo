@@ -219,8 +219,9 @@ public class XCamera extends XVisioClass {
 
     public static native int getRecordTime();
 
+    public static native String getPose();
+    public static native String getGesture();
     public static native int getFisheyeImage(ByteBuffer buffer);
-
     public static native int getRgb1Image(ByteBuffer buffer);
     public static native int getRgb2Image(ByteBuffer buffer);
     private static native void nRemoveUsbDevice(int fileDescriptor);

@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include "fps_count.hpp"
 #include <opencv2/opencv.hpp>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define LOG_TAG "xslam#wrapper"
 #define LOG_DEBUG(...)                                                \
@@ -176,23 +178,35 @@ static int g_slam_cb = -1;
 static int g_fisheye_cb = -1;
 static int g_rgb1_cb = -1;
 static int g_rgb2_cb = -1;
+static int g_gesture_cb = -1;
 
 static FpsCount g_slam_fc;
 static FpsCount g_fisheye_fc;
 static FpsCount g_rgb1_fc;
 static FpsCount g_rgb2_fc;
+static FpsCount g_gesture_fc;
 
+static std::mutex g_pose_mtx;
 static std::mutex g_fisheye_mtx;
 static std::mutex g_rgb1_mtx;
 static std::mutex g_rgb2_mtx;
+static std::mutex g_gesture_mtx;
+
+static xv::Pose g_pose;
 static xv::FisheyeImages g_fisheye_img;
 static xv::ColorImage g_rgb1_img;
 static xv::ColorImage g_rgb2_img;
+static std::shared_ptr<const xv::HandPose> g_hand_pose = nullptr;
 
-std::ofstream g_rgb1_out_stream;
-std::ofstream g_rgb2_out_stream;
-std::ofstream g_fisheye_out_stream;
-std::ofstream g_slam_out_stream;
+static std::ofstream g_info_out_stream;
+static std::ofstream g_slam_out_stream;
+static std::ofstream g_gesture_out_stream;
+static int g_fisheye_fd = -1;
+static int g_rgb1_fd = -1;
+static int g_rgb2_fd = -1;
+
+std::vector<char> g_slam_buffer;
+std::vector<char> g_gesture_buffer;
 
 void onImuCallback(xv::Imu const &imu) {
     JNIEnv *jniEnv;
@@ -665,36 +679,44 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
 
     });
 
-    device->imuSensor()->registerCallback([](xv::Imu const & imu){
-
-    });
-
+    device->slam()->reset();
     device->slam()->registerCallback([](xv::Pose const & pose){
+        std::lock_guard<std::mutex> lock(g_pose_mtx);
+        g_pose = pose;
         g_slam_fc.tic();
     });
 
     device->fisheyeCameras()->start();
-    int cb1 = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
+    device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
         std::lock_guard<std::mutex> lock(g_fisheye_mtx);
         g_fisheye_img = stereo;
         g_fisheye_fc.tic();
     });
 
     device->colorCamera()->start();
-    int cb2 = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
+    device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
         std::lock_guard<std::mutex> lock(g_rgb1_mtx);
         g_rgb1_img = rgb;
         g_rgb1_fc.tic();
     });
 
     device->colorCamera()->startCameras();
-    int cb3 = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
+    device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
         std::lock_guard<std::mutex> lock(g_rgb2_mtx);
         g_rgb2_img = rgb;
         g_rgb2_fc.tic();
     });
 
-    LOG_DEBUG("nAddUsbDevice registerCallback %d, %d, %d", cb1, cb2, cb3);
+    device->gesture()->setPlatform(3, true);
+    device->gesture()->setParams(9, true);
+    device->gesture()->setfisheyeParams(true);
+    device->gesture()->setfisheyeIndex(0,1);
+    device->gesture()->start();
+    device->gesture()->registerSlamKeypointsCallback([](std::shared_ptr<const xv::HandPose> keypoints) {
+        std::lock_guard<std::mutex> lock(g_gesture_mtx);
+        g_hand_pose = keypoints;
+        g_gesture_fc.tic();
+    });
 }
 
 extern "C" JNIEXPORT jint JNICALL
@@ -717,66 +739,163 @@ Java_org_xvisio_xvsdk_XCamera_getFps(JNIEnv *env, jclass type, jint stream) {
             fps = std::round(g_rgb2_fc.fps());
             break;
 
+        case 5:
+            fps = std::round(g_gesture_fc.fps());
+            break;
+
         default:
             break;
     }
     return (jint)fps;
 }
 
-bool isRecording()
+int getRecordTime()
 {
-    if(!g_recording)
-    {
-        return false;
-    }
-
     long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     int time = now - g_start_time;
-    return time < MAX_RECORD_TIME;
+    return time < MAX_RECORD_TIME ? time : MAX_RECORD_TIME;
+}
+
+bool isRecording()
+{
+    return g_recording && getRecordTime() < MAX_RECORD_TIME;
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_org_xvisio_xvsdk_XCamera_getRecordTime(JNIEnv *env, jclass type) {
-    long long now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-    int time = now - g_start_time;
     if(!g_recording)
     {
         return 0;
     }
 
-    return (jint)(time < MAX_RECORD_TIME ? time : MAX_RECORD_TIME);
+    return (jint)getRecordTime();
 }
 
 static void stopSaveData()
 {
-    if(g_slam_cb >= -1)
+    if(g_slam_cb > -1)
     {
         device->slam()->unregisterCallback(g_slam_cb);
         g_slam_cb = -1;
     }
+    g_slam_out_stream.flush();
     g_slam_out_stream.close();
 
-    if(g_fisheye_cb >= -1)
+    if(g_fisheye_cb > -1)
     {
         device->fisheyeCameras()->unregisterCallback(g_fisheye_cb);
         g_fisheye_cb = -1;
     }
-    g_fisheye_out_stream.close();
 
-    if(g_rgb1_cb >= -1)
+    if(g_fisheye_fd > 0)
+    {
+        close(g_fisheye_fd);
+        g_fisheye_fd = -1;
+    }
+
+    if(g_rgb1_cb > -1)
     {
         device->colorCamera()->unregisterCallback(g_rgb1_cb);
         g_rgb1_cb = -1;
     }
-    g_rgb1_out_stream.close();
 
-    if(g_rgb2_cb >= -1)
+    if(g_rgb1_fd > 0)
+    {
+        close(g_rgb1_fd);
+        g_rgb1_fd = -1;
+    }
+
+    if(g_rgb2_cb > -1)
     {
         device->colorCamera()->unregisterCam2Callback(g_rgb2_cb);
         g_rgb2_cb = -1;
     }
-    g_rgb2_out_stream.close();
+
+    if(g_rgb2_fd > 0)
+    {
+        close(g_rgb2_fd);
+        g_rgb2_fd = -1;
+    }
+
+    if(g_gesture_cb > -1)
+    {
+        device->gesture()->unregisterSlamKeypointsCallback(g_gesture_cb);
+        g_gesture_cb = -1;
+    }
+    g_gesture_out_stream.flush();
+    g_gesture_out_stream.close();
+
+    char buff[256] = {0};
+    int seconds = getRecordTime();
+    sprintf(buff, "Record time:%02d:%02d", seconds/60, seconds%60);
+    g_info_out_stream << buff << std::endl;
+    g_info_out_stream.flush();
+    g_info_out_stream.close();
+
     g_start_time = 0;
+}
+
+static void print(std::ofstream &out, xv::CalibrationEx &c)
+{
+    out << "T:\n";
+    out << c.pose.translation()[0] << "\t"
+                      << c.pose.translation()[1] << "\t"
+                      << c.pose.translation()[2] << "\t\n";
+
+    out << "R:\n";
+    for(int i=0;i <3; i++)
+    {
+        out << c.pose.rotation()[3*i+0] << "\t"
+            << c.pose.rotation()[3*i+1] << "\t"
+            << c.pose.rotation()[3*i+2] << "\t\n";
+    }
+
+    if(c.seucm.size() > 0)
+    {
+        out << "SEUCM:\n";
+        out << c.seucm[0].w << "\t"
+            << c.seucm[0].h << "\t"
+            << c.seucm[0].fx << "\t"
+            << c.seucm[0].fy << "\t"
+            << c.seucm[0].u0 << "\t"
+            << c.seucm[0].v0 << "\t"
+            << c.seucm[0].eu << "\t"
+            << c.seucm[0].ev << "\t"
+            << c.seucm[0].alpha << "\t"
+            << c.seucm[0].beta << "\n\n";
+    }
+}
+
+static void print(std::ofstream &out, xv::Calibration &c)
+{
+    out << "T:\n";
+    out << c.pose.translation()[0] << "\t"
+        << c.pose.translation()[1] << "\t"
+        << c.pose.translation()[2] << "\t\n";
+
+    out << "R:\n";
+    for(int i=0;i <3; i++)
+    {
+        out << c.pose.rotation()[3*i+0] << "\t"
+            << c.pose.rotation()[3*i+1] << "\t"
+            << c.pose.rotation()[3*i+2] << "\t\n";
+    }
+
+    if(c.pdcm.size() > 0)
+    {
+        out << "PDCM:\n";
+        out << c.pdcm[0].w << "\t"
+            << c.pdcm[0].h << "\t"
+            << c.pdcm[0].fx << "\t"
+            << c.pdcm[0].fy << "\t"
+            << c.pdcm[0].u0 << "\t"
+            << c.pdcm[0].v0 << "\t"
+            << c.pdcm[0].distor[0] << "\t"
+            << c.pdcm[0].distor[1] << "\t"
+            << c.pdcm[0].distor[2] << "\t"
+            << c.pdcm[0].distor[3] << "\t"
+            << c.pdcm[0].distor[4] << "\n\n";
+    }
 }
 
 static void startSaveData()
@@ -796,6 +915,7 @@ static void startSaveData()
     std::string SAVE_RGB2_DIR = SAVE_DIR + "/RGB_Right";
     std::string SAVE_FISHEYE_DIR = SAVE_DIR + "/Fisheye";
     std::string SAVE_SLAM_DIR = SAVE_DIR + "/Slam";
+    std::string SAVE_GESTURE_DIR = SAVE_DIR + "/Gesture";
 
     mkdir(SAVE_HOME.c_str(), 0777);
     mkdir(SAVE_DIR.c_str(), 0777);
@@ -803,53 +923,150 @@ static void startSaveData()
     mkdir(SAVE_RGB2_DIR.c_str(), 0777);
     mkdir(SAVE_FISHEYE_DIR.c_str(), 0777);
     mkdir(SAVE_SLAM_DIR.c_str(), 0777);
+    mkdir(SAVE_GESTURE_DIR.c_str(), 0777);
 
-    g_rgb1_out_stream = std::ofstream(SAVE_RGB1_DIR + "/Rgb_left_1600_1200_30.mjpg", std::ios::binary | std::ios::app);
-    g_rgb2_out_stream = std::ofstream(SAVE_RGB2_DIR + "/Rgb_right_1600_1200_30.mjpg", std::ios::binary | std::ios::app);
-    g_fisheye_out_stream = std::ofstream(SAVE_FISHEYE_DIR + "/fisheye_640_480_30_4_gray.raw", std::ios::binary | std::ios::app);
-    g_slam_out_stream = std::ofstream(SAVE_SLAM_DIR + "/slam.txt", std::ios::app);
+    g_info_out_stream = std::ofstream(SAVE_DIR + "/info.txt", std::ios::app);
+
+    std::string fisheye_file = SAVE_FISHEYE_DIR + "/fisheye_640_480_30_4_gray.raw";
+    g_fisheye_fd = open(fisheye_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
+
+    std::string rgb1_file = SAVE_RGB1_DIR + "/Rgb_left_1600_1200_30.mjpg";
+    g_rgb1_fd = open(rgb1_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
+
+    std::string rgb2_file = SAVE_RGB2_DIR + "/Rgb_right_1600_1200_30.mjpg";
+    g_rgb2_fd = open(rgb2_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
+
+    g_slam_buffer.resize(128*1024);
+    g_slam_out_stream.rdbuf()->pubsetbuf(g_slam_buffer.data(), g_slam_buffer.size());
+    g_slam_out_stream.open(SAVE_SLAM_DIR + "/slam.txt", std::ios::app);
+
+    g_gesture_buffer.resize(128*1024);
+    g_gesture_out_stream.rdbuf()->pubsetbuf(g_gesture_buffer.data(), g_gesture_buffer.size());
+    g_gesture_out_stream.open(SAVE_GESTURE_DIR + "/gesture.txt",std::ios::app);
+
+    if(g_info_out_stream)
+    {
+        std::string uuid = "";
+        if(device->info().find("uuid") != device->info().end())
+        {
+            uuid = device->info()["uuid"];
+        }
+        g_info_out_stream << "sn:" << uuid << "\n\n";
+        g_info_out_stream << "fisheye:\n";
+        auto feCalibs = std::dynamic_pointer_cast<xv::FisheyeCamerasEx>(device->fisheyeCameras())->calibrationEx();
+        for(int i=0; i<feCalibs.size(); i++)
+        {
+            print(g_info_out_stream, feCalibs[i]);
+        }
+
+        g_info_out_stream << "rgb1:\n";
+        auto rgb1Calib = device->colorCamera()->calibration();
+        for(int i=0; i<rgb1Calib.size(); i++)
+        {
+            print(g_info_out_stream, rgb1Calib[i]);
+        }
+
+        g_info_out_stream << "rgb2:\n";
+        auto rgb2Calib = device->colorCamera()->calibration2();
+        for(int i=0; i<rgb1Calib.size(); i++)
+        {
+            print(g_info_out_stream, rgb1Calib[i]);
+        }
+        g_info_out_stream.flush();
+    }
+
     if(g_slam_out_stream)
     {
-        std::string header = "confidence,timestamp,x,y,z,q0,q1,q2,q3";
+        std::string header = "confidence,timestamp,x,y,z,q0,q1,q2,q3\n";
         g_slam_out_stream << header;
-        g_slam_out_stream << std::endl;
     }
+
+    if(g_gesture_out_stream)
+    {
+        std::string header = "timestamp";
+        for(int i=0; i<52; i++)
+        {
+            if(i==26)
+            {
+                header += ",timestamp";
+            }
+            header += ",x,y,z,q0,q1,q2,q3";
+        }
+        g_gesture_out_stream << header << "\n";
+    }
+
     g_slam_cb = device->slam()->registerCallback([](xv::Pose const & pose){
+        static int count = 0;
         if(isRecording() && g_slam_out_stream)
         {
+            count++;
             auto q = xv::rotationToQuaternion(pose.rotation());
             char buf[256] = {0};
-            sprintf(buf, "%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+            sprintf(buf, "%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                     pose.confidence(), pose.hostTimestamp(), pose.x(), pose.y(), pose.z(),
                     q[0], q[1], q[2], q[3]);
             g_slam_out_stream << buf;
-            g_slam_out_stream << std::endl;
-            g_slam_out_stream.flush();
+
+            if(count > 2000)
+            {
+                g_slam_out_stream.flush();
+                count = 0;
+            }
         }
     });
 
     g_fisheye_cb = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
-        if(isRecording() && g_fisheye_out_stream) {
+        if(isRecording() && g_fisheye_fd > 0) {
             for (int i = 0; i < stereo.images.size(); i++) {
-                g_fisheye_out_stream.write(
-                        reinterpret_cast<const char *>(stereo.images[i].data.get()),
-                        stereo.images[i].width * stereo.images[i].height);
+                write(g_fisheye_fd, reinterpret_cast<const char *>(stereo.images[i].data.get()), stereo.images[0].width * stereo.images[0].height);
             }
-            g_fisheye_out_stream.flush();
         }
     });
 
     g_rgb1_cb = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
-        if(isRecording() && g_rgb1_out_stream) {
-            g_rgb1_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
-            g_rgb1_out_stream.flush();
+        if(isRecording() && g_rgb1_fd > 0) {
+            write(g_rgb1_fd, reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
         }
     });
 
     g_rgb2_cb = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
-        if(isRecording() && g_rgb2_out_stream) {
-            g_rgb2_out_stream.write(reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
-            g_rgb2_out_stream.flush();
+        if(isRecording() && g_rgb2_fd) {
+            write(g_rgb2_fd, reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
+        }
+    });
+
+    g_gesture_cb = device->gesture()->registerSlamKeypointsCallback([](std::shared_ptr<const xv::HandPose> keypoints) {
+        static int count = 0;
+        if(isRecording() && g_gesture_out_stream)
+        {
+            count++;
+            std::string line;
+            char buf[256] = {0};
+            sprintf(buf, "%.3f", keypoints->timestamp[0]);
+            line += buf;
+            for(int i=0; i<keypoints->pose.size(); i++)
+            {
+                if(i==26)
+                {
+                    memset(buf, 0x0, sizeof(buf));
+                    sprintf(buf, ",%.3f", keypoints->timestamp[1]);
+                    line += buf;
+                }
+
+                char tmp[256] = {0};
+                auto q = xv::rotationToQuaternion(keypoints->pose[i].rotation());
+                sprintf(tmp, ",%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+                        keypoints->pose[i].x(), keypoints->pose[i].y(), keypoints->pose[i].z(),
+                        q[0], q[1], q[2], q[3]);
+                line += tmp;
+            }
+            g_gesture_out_stream << line << "\n";
+
+            if(count > 50)
+            {
+                count = 0;
+                g_gesture_out_stream.flush();
+            }
         }
     });
 }
@@ -857,6 +1074,43 @@ static void startSaveData()
 extern "C" JNIEXPORT jboolean JNICALL
 Java_org_xvisio_xvsdk_XCamera_isReady(JNIEnv *env, jclass type) {
     return m_ready && device != nullptr;
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_xvisio_xvsdk_XCamera_getPose(JNIEnv *env, jclass type) {
+    xv::Pose pose;
+    {
+        std::lock_guard<std::mutex> lock(g_pose_mtx);
+        pose = g_pose;
+    }
+
+    auto q = xv::rotationToQuaternion(pose.rotation());
+    char buf[256] = {0};
+    sprintf(buf, "confidence:%.1f, T(%.3f, %.3f, %.3f), Q(%.3f, %.3f, %.3f, %.3f)",
+            pose.confidence(), pose.x(), pose.y(), pose.z(), q[0], q[1], q[2], q[3]);
+
+    return env->NewStringUTF(buf);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_xvisio_xvsdk_XCamera_getGesture(JNIEnv *env, jclass type) {
+    std::shared_ptr<const xv::HandPose> handPose;
+    {
+        std::lock_guard<std::mutex> lock(g_gesture_mtx);
+        handPose = g_hand_pose;
+    }
+
+    if(handPose == nullptr)
+    {
+        return env->NewStringUTF("");
+    }
+
+    char buf[256] = {0};
+    sprintf(buf, "left(%.3f, %.3f, %.3f), right(%.3f, %.3f, %.3f)",
+            handPose->pose[0].x(), handPose->pose[0].y(), handPose->pose[0].z(),
+            handPose->pose[26].x(), handPose->pose[26].y(), handPose->pose[26].z());
+
+    return env->NewStringUTF(buf);
 }
 
 extern "C" JNIEXPORT jint JNICALL
