@@ -6,6 +6,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -53,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     String mSdcardPath = "";
     int mUpdateCount = 0;
 
+    boolean mRecording = false;
+
     static final int IMAGE_WIDTH = 640;
     static final int IMAGE_HEIGHT = 480;
     ByteBuffer m_fisheyeBuffer = ByteBuffer.allocateDirect(IMAGE_WIDTH * IMAGE_HEIGHT);
@@ -95,12 +100,15 @@ public class MainActivity extends AppCompatActivity {
         if (mUpdateCount % 3 == 0) {
             m_CheckBoxSave.setTextColor(XCamera.isReady() ? Color.GREEN : Color.RED);
             m_CheckBoxSave.setEnabled(XCamera.isReady());
-            int seconds = XCamera.getRecordTime();
+            int seconds = 0;
+            if (mRecording) {
+                seconds = XCamera.getRecordTime();
+            }
             String time = String.format("time: %02d:%02d", seconds / 60, seconds % 60);
             m_tvSaveTime.setText(time);
         }
 
-        if (mUpdateCount % 15 == 0) {
+        if (mUpdateCount % 30 == 0) {
             String slamFps = "slam: " + XCamera.getFps(1) + "fps";
             m_tvSlamFps.setText(slamFps);
 
@@ -123,17 +131,17 @@ public class MainActivity extends AppCompatActivity {
         String gesture = "gesture: " + XCamera.getGesture();
         m_tvGestureData.setText(gesture);
 
-        if (XCamera.getFisheyeImage(m_fisheyeBuffer) > 0) {
-            drawGrayImage(m_ivFisheye, m_fisheyeBuffer);
-        }
-
-        if (XCamera.getRgb1Image(m_rgb1Buffer) > 0) {
-            drawRgbImage(m_ivRgb1, m_rgb1Buffer);
-        }
-
-        if (XCamera.getRgb2Image(m_rgb2Buffer) > 0) {
-            drawRgbImage(m_ivRgb2, m_rgb2Buffer);
-        }
+//        if (XCamera.getFisheyeImage(m_fisheyeBuffer) > 0) {
+//            drawGrayImage(m_ivFisheye, m_fisheyeBuffer);
+//        }
+//
+//        if (XCamera.getRgb1Image(m_rgb1Buffer) > 0) {
+//            drawRgbImage(m_ivRgb1, m_rgb1Buffer);
+//        }
+//
+//        if (XCamera.getRgb2Image(m_rgb2Buffer) > 0) {
+//            drawRgbImage(m_ivRgb2, m_rgb2Buffer);
+//        }
     }
 
     void drawGrayImage(ImageView imageView, ByteBuffer buffer) {
@@ -172,6 +180,20 @@ public class MainActivity extends AppCompatActivity {
         imageView.setImageBitmap(bitmap);
     }
 
+    public void playNotification() {
+        try {
+            Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+            Ringtone ringtone = RingtoneManager.getRingtone(this, notificationUri);
+
+            if (ringtone != null) {
+                ringtone.play();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -203,6 +225,12 @@ public class MainActivity extends AppCompatActivity {
         m_CheckBoxSave.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                mSdcardPath = getSdcardPath();
+                if (!mSdcardPath.isEmpty()) {
+                    String path = "path:" + mSdcardPath + "/xv_save";
+                    tvSdcard.setText(path);
+                }
+
                 if (!XCamera.isReady()) {
                     Toast.makeText(mAppContext, "device Not ready", Toast.LENGTH_SHORT).show();
                     compoundButton.setChecked(false);
@@ -212,7 +240,11 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        XCamera.nSaveData(mSdcardPath, b);
+                        mRecording = XCamera.nSaveData(mSdcardPath, b);
+                        Log.i("MainActivity", "saveData:" + mRecording);
+                        if(mRecording) {
+                            // playNotification();
+                        }
                     }
                 }).start();
             }

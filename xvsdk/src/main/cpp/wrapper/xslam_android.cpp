@@ -26,6 +26,7 @@
 #include <opencv2/opencv.hpp>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <queue>
 
 #define LOG_TAG "xslam#wrapper"
 #define LOG_DEBUG(...)                                                \
@@ -170,7 +171,14 @@ static const xv::sgbm_config sgbm_config
         };
 
 
-std::string SAVE_HOME = "";
+static std::string SAVE_HOME = "";
+static std::string SAVE_DIR = "";
+static std::string SAVE_RGB1_DIR = "";
+static std::string SAVE_RGB2_DIR = "";
+static std::string SAVE_FISHEYE_DIR = "";
+static std::string SAVE_SLAM_DIR = "";
+static std::string SAVE_GESTURE_DIR = "";
+
 const long long MAX_RECORD_TIME = 60*60; // seconds
 static bool g_recording = false;
 static long long g_start_time = 0L;
@@ -199,14 +207,125 @@ static xv::ColorImage g_rgb2_img;
 static std::shared_ptr<const xv::HandPose> g_hand_pose = nullptr;
 
 static std::ofstream g_info_out_stream;
-static std::ofstream g_slam_out_stream;
-static std::ofstream g_gesture_out_stream;
-static int g_fisheye_fd = -1;
-static int g_rgb1_fd = -1;
-static int g_rgb2_fd = -1;
+static std::ofstream g_slam_stream;
+static std::ofstream g_gesture_stream;
+static std::ofstream g_fisheye_slam_stream;
+static std::ofstream g_rgb1_slam_stream;
+static std::ofstream g_rgb2_slam_stream;
 
-std::vector<char> g_slam_buffer;
-std::vector<char> g_gesture_buffer;
+static int g_fisheye_index = 0;
+static int g_rgb1_index = 0;
+static int g_rgb2_index = 0;
+
+static std::thread* g_event_thread;
+
+enum WriteEvent
+{
+    FISHEYE,
+    RGB1,
+    RGB2
+};
+
+struct WriteMessage {
+    WriteEvent event;
+    int index;
+    xv::FisheyeImages stereo;
+    xv::ColorImage rgb;
+};
+
+static std::mutex g_msg_lock;
+static std::queue<WriteMessage> g_msg_queue;
+static std::condition_variable m_event_cond;
+
+
+static void post(WriteEvent e, xv::ColorImage const & rgb, int index)
+{
+    {
+        WriteMessage msg;
+        msg.event = e;
+        msg.rgb = rgb;
+        msg.index = index;
+        std::lock_guard<std::mutex> guard(g_msg_lock);
+        g_msg_queue.push(msg);
+    }
+    m_event_cond.notify_one();
+}
+
+static void post(xv::FisheyeImages const & stereo, int index)
+{
+    {
+        WriteMessage msg;
+        msg.event = WriteEvent::FISHEYE;
+        msg.stereo = stereo;
+        msg.index = index;
+        std::lock_guard<std::mutex> guard(g_msg_lock);
+        g_msg_queue.push(msg);
+    }
+    m_event_cond.notify_one();
+}
+
+static std::string getPose(int index, double timestamp)
+{
+    xv::Pose pose;
+    device->slam()->getPoseAt(pose, timestamp);
+    auto q = xv::rotationToQuaternion(pose.rotation());
+    char buf[256] = {0};
+    sprintf(buf, "%d,%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+            index, pose.confidence(), pose.hostTimestamp(),
+            pose.x(), pose.y(), pose.z(),
+            q[0], q[1], q[2], q[3]);
+    return {buf};
+}
+
+static void handleEvents()
+{
+    while(true)
+    {
+        std::unique_lock<std::mutex> lock(g_msg_lock);
+
+        while(g_msg_queue.empty())
+        {
+            m_event_cond.wait(lock);
+        }
+
+        WriteMessage msg = g_msg_queue.front();
+        g_msg_queue.pop();
+        if(g_msg_queue.size() > 1)
+        {
+            LOG_DEBUG("handleEvents queue:%d", g_msg_queue.size());
+        }
+        lock.unlock();
+        if(msg.event == WriteEvent::FISHEYE)
+        {
+            char name[256] = {0};
+            sprintf(name, "%s/%d.raw", SAVE_FISHEYE_DIR.c_str(), msg.index);
+            std::ofstream out = std::ofstream(name, std::ios::binary | std::ios::app);
+            if(out) {
+                for (int i = 0; i < msg.stereo.images.size(); i++) {
+                    out.write(reinterpret_cast<const char*>(msg.stereo.images[0].data.get()), msg.stereo.images[i].width * msg.stereo.images[i].height);
+                }
+            }
+        }
+        else if(msg.event == WriteEvent::RGB1)
+        {
+            char name[256] = {0};
+            sprintf(name, "%s/%d.jpg", SAVE_RGB1_DIR.c_str(), msg.index);
+            std::ofstream out = std::ofstream(name, std::ios::binary | std::ios::app);
+            if(out) {
+                out.write(reinterpret_cast<const char *>(msg.rgb.data.get()), msg.rgb.dataSize);
+            }
+        }
+        else if(msg.event == WriteEvent::RGB2)
+        {
+            char name[256] = {0};
+            sprintf(name, "%s/%d.jpg", SAVE_RGB2_DIR.c_str(), msg.index);
+            std::ofstream out = std::ofstream(name, std::ios::binary | std::ios::app);
+            if(out) {
+                out.write(reinterpret_cast<const char *>(msg.rgb.data.get()), msg.rgb.dataSize);
+            }
+        }
+    }
+}
 
 void onImuCallback(xv::Imu const &imu) {
     JNIEnv *jniEnv;
@@ -717,6 +836,8 @@ Java_org_xvisio_xvsdk_XCamera_nAddUsbDevice(JNIEnv
         g_hand_pose = keypoints;
         g_gesture_fc.tic();
     });
+
+    g_event_thread = new std::thread(handleEvents);
 }
 
 extern "C" JNIEXPORT jint JNICALL
@@ -778,8 +899,13 @@ static void stopSaveData()
         device->slam()->unregisterCallback(g_slam_cb);
         g_slam_cb = -1;
     }
-    g_slam_out_stream.flush();
-    g_slam_out_stream.close();
+
+    if(g_slam_stream)
+    {
+        g_slam_stream.flush();
+        g_slam_stream.close();
+    }
+
 
     if(g_fisheye_cb > -1)
     {
@@ -787,10 +913,10 @@ static void stopSaveData()
         g_fisheye_cb = -1;
     }
 
-    if(g_fisheye_fd > 0)
+    if(g_fisheye_slam_stream)
     {
-        close(g_fisheye_fd);
-        g_fisheye_fd = -1;
+        g_fisheye_slam_stream.flush();
+        g_fisheye_slam_stream.close();
     }
 
     if(g_rgb1_cb > -1)
@@ -799,10 +925,10 @@ static void stopSaveData()
         g_rgb1_cb = -1;
     }
 
-    if(g_rgb1_fd > 0)
+    if(g_rgb1_slam_stream)
     {
-        close(g_rgb1_fd);
-        g_rgb1_fd = -1;
+        g_rgb1_slam_stream.flush();
+        g_rgb1_slam_stream.close();
     }
 
     if(g_rgb2_cb > -1)
@@ -811,10 +937,10 @@ static void stopSaveData()
         g_rgb2_cb = -1;
     }
 
-    if(g_rgb2_fd > 0)
+    if(g_rgb2_slam_stream)
     {
-        close(g_rgb2_fd);
-        g_rgb2_fd = -1;
+        g_rgb2_slam_stream.flush();
+        g_rgb2_slam_stream.close();
     }
 
     if(g_gesture_cb > -1)
@@ -822,15 +948,23 @@ static void stopSaveData()
         device->gesture()->unregisterSlamKeypointsCallback(g_gesture_cb);
         g_gesture_cb = -1;
     }
-    g_gesture_out_stream.flush();
-    g_gesture_out_stream.close();
+    if(g_gesture_stream)
+    {
+        g_gesture_stream.flush();
+        g_gesture_stream.close();
+    }
 
-    char buff[256] = {0};
-    int seconds = getRecordTime();
-    sprintf(buff, "Record time:%02d:%02d", seconds/60, seconds%60);
-    g_info_out_stream << buff << std::endl;
-    g_info_out_stream.flush();
-    g_info_out_stream.close();
+    if(g_info_out_stream)
+    {
+        char buff[256] = {0};
+        int seconds = getRecordTime();
+        sprintf(buff, "Record time:%02d:%02d", seconds/60, seconds%60);
+        g_info_out_stream << buff << std::endl;
+
+        g_info_out_stream.flush();
+        g_info_out_stream.close();
+    }
+
 
     g_start_time = 0;
 }
@@ -903,6 +1037,9 @@ static void startSaveData()
     std::string cmd = "rm -rf " + SAVE_HOME + "/*";
     system(cmd.c_str());
 
+    g_fisheye_index = 0;
+    g_rgb1_index = 0;
+    g_rgb2_index = 0;
     g_start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     std::time_t now = std::time(nullptr);
     std::tm utc_tm;
@@ -910,12 +1047,12 @@ static void startSaveData()
     char date[128] = {0};
     sprintf(date, "%04d-%02d-%02d-%02d-%02d-%02d",
             utc_tm.tm_year+1900, utc_tm.tm_mon+1, utc_tm.tm_mday, utc_tm.tm_hour, utc_tm.tm_min, utc_tm.tm_sec);
-    std::string SAVE_DIR = SAVE_HOME + "/" + (std::string)date;
-    std::string SAVE_RGB1_DIR = SAVE_DIR + "/RGB_Left";
-    std::string SAVE_RGB2_DIR = SAVE_DIR + "/RGB_Right";
-    std::string SAVE_FISHEYE_DIR = SAVE_DIR + "/Fisheye";
-    std::string SAVE_SLAM_DIR = SAVE_DIR + "/Slam";
-    std::string SAVE_GESTURE_DIR = SAVE_DIR + "/Gesture";
+    SAVE_DIR = SAVE_HOME + "/" + (std::string)date;
+    SAVE_RGB1_DIR = SAVE_DIR + "/RGB_Left";
+    SAVE_RGB2_DIR = SAVE_DIR + "/RGB_Right";
+    SAVE_FISHEYE_DIR = SAVE_DIR + "/Fisheye";
+    SAVE_SLAM_DIR = SAVE_DIR + "/Slam";
+    SAVE_GESTURE_DIR = SAVE_DIR + "/Gesture";
 
     mkdir(SAVE_HOME.c_str(), 0777);
     mkdir(SAVE_DIR.c_str(), 0777);
@@ -926,23 +1063,11 @@ static void startSaveData()
     mkdir(SAVE_GESTURE_DIR.c_str(), 0777);
 
     g_info_out_stream = std::ofstream(SAVE_DIR + "/info.txt", std::ios::app);
-
-    std::string fisheye_file = SAVE_FISHEYE_DIR + "/fisheye_640_480_30_4_gray.raw";
-    g_fisheye_fd = open(fisheye_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
-
-    std::string rgb1_file = SAVE_RGB1_DIR + "/Rgb_left_1600_1200_30.mjpg";
-    g_rgb1_fd = open(rgb1_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
-
-    std::string rgb2_file = SAVE_RGB2_DIR + "/Rgb_right_1600_1200_30.mjpg";
-    g_rgb2_fd = open(rgb2_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE, S_IRUSR | S_IWUSR);
-
-    g_slam_buffer.resize(128*1024);
-    g_slam_out_stream.rdbuf()->pubsetbuf(g_slam_buffer.data(), g_slam_buffer.size());
-    g_slam_out_stream.open(SAVE_SLAM_DIR + "/slam.txt", std::ios::app);
-
-    g_gesture_buffer.resize(128*1024);
-    g_gesture_out_stream.rdbuf()->pubsetbuf(g_gesture_buffer.data(), g_gesture_buffer.size());
-    g_gesture_out_stream.open(SAVE_GESTURE_DIR + "/gesture.txt",std::ios::app);
+    g_fisheye_slam_stream.open(SAVE_FISHEYE_DIR + "/slam.txt", std::ios::app);
+    g_rgb1_slam_stream.open(SAVE_RGB1_DIR + "/slam.txt", std::ios::app);
+    g_rgb2_slam_stream.open(SAVE_RGB2_DIR + "/slam.txt", std::ios::app);
+    g_slam_stream.open(SAVE_SLAM_DIR + "/slam.txt", std::ios::app);
+    g_gesture_stream.open(SAVE_GESTURE_DIR + "/gesture.txt", std::ios::app);
 
     if(g_info_out_stream)
     {
@@ -975,13 +1100,13 @@ static void startSaveData()
         g_info_out_stream.flush();
     }
 
-    if(g_slam_out_stream)
+    if(g_slam_stream)
     {
         std::string header = "confidence,timestamp,x,y,z,q0,q1,q2,q3\n";
-        g_slam_out_stream << header;
+        g_slam_stream << header;
     }
 
-    if(g_gesture_out_stream)
+    if(g_gesture_stream)
     {
         std::string header = "timestamp";
         for(int i=0; i<52; i++)
@@ -992,12 +1117,30 @@ static void startSaveData()
             }
             header += ",x,y,z,q0,q1,q2,q3";
         }
-        g_gesture_out_stream << header << "\n";
+        g_gesture_stream << header << "\n";
+    }
+
+    if(g_fisheye_slam_stream)
+    {
+        std::string header = "index,confidence,timestamp,x,y,z,q0,q1,q2,q3\n";
+        g_fisheye_slam_stream << header;
+    }
+
+    if(g_rgb1_slam_stream)
+    {
+        std::string header = "index,confidence,timestamp,x,y,z,q0,q1,q2,q3\n";
+        g_rgb1_slam_stream << header;
+    }
+
+    if(g_rgb2_slam_stream)
+    {
+        std::string header = "index,confidence,timestamp,x,y,z,q0,q1,q2,q3\n";
+        g_rgb2_slam_stream << header;
     }
 
     g_slam_cb = device->slam()->registerCallback([](xv::Pose const & pose){
         static int count = 0;
-        if(isRecording() && g_slam_out_stream)
+        if(isRecording() && g_slam_stream)
         {
             count++;
             auto q = xv::rotationToQuaternion(pose.rotation());
@@ -1005,39 +1148,55 @@ static void startSaveData()
             sprintf(buf, "%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                     pose.confidence(), pose.hostTimestamp(), pose.x(), pose.y(), pose.z(),
                     q[0], q[1], q[2], q[3]);
-            g_slam_out_stream << buf;
+            g_slam_stream << buf;
 
             if(count > 2000)
             {
-                g_slam_out_stream.flush();
+                g_slam_stream.flush();
                 count = 0;
             }
         }
     });
 
     g_fisheye_cb = device->fisheyeCameras()->registerCallback([](xv::FisheyeImages const & stereo){
-        if(isRecording() && g_fisheye_fd > 0) {
-            for (int i = 0; i < stereo.images.size(); i++) {
-                write(g_fisheye_fd, reinterpret_cast<const char *>(stereo.images[i].data.get()), stereo.images[0].width * stereo.images[0].height);
+        if(isRecording()) {
+            g_fisheye_index++;
+            post(stereo, g_fisheye_index);
+            g_fisheye_slam_stream << getPose(g_fisheye_index, stereo.hostTimestamp);
+            if(g_fisheye_index % 1000 == 0)
+            {
+                g_fisheye_slam_stream.flush();
             }
         }
     });
 
     g_rgb1_cb = device->colorCamera()->registerCallback([](xv::ColorImage const & rgb){
-        if(isRecording() && g_rgb1_fd > 0) {
-            write(g_rgb1_fd, reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
+        if(isRecording()) {
+            g_rgb1_index++;
+            post(WriteEvent::RGB1, rgb, g_rgb1_index);
+            g_rgb1_slam_stream << getPose(g_rgb1_index, rgb.hostTimestamp);
+            if(g_rgb1_index % 1000 == 0)
+            {
+                g_rgb1_slam_stream.flush();
+            }
         }
     });
 
     g_rgb2_cb = device->colorCamera()->registerCam2Callback([](xv::ColorImage const & rgb){
-        if(isRecording() && g_rgb2_fd) {
-            write(g_rgb2_fd, reinterpret_cast<const char *>(rgb.data.get()), rgb.dataSize);
+        if(isRecording()) {
+            g_rgb2_index++;
+            post(WriteEvent::RGB2, rgb, g_rgb2_index);
+            g_rgb2_slam_stream << getPose(g_rgb2_index, rgb.hostTimestamp);
+            if(g_rgb2_index % 1000 == 0)
+            {
+                g_rgb2_slam_stream.flush();
+            }
         }
     });
 
     g_gesture_cb = device->gesture()->registerSlamKeypointsCallback([](std::shared_ptr<const xv::HandPose> keypoints) {
         static int count = 0;
-        if(isRecording() && g_gesture_out_stream)
+        if(isRecording() && g_gesture_stream)
         {
             count++;
             std::string line;
@@ -1060,12 +1219,12 @@ static void startSaveData()
                         q[0], q[1], q[2], q[3]);
                 line += tmp;
             }
-            g_gesture_out_stream << line << "\n";
+            g_gesture_stream << line << "\n";
 
             if(count > 50)
             {
                 count = 0;
-                g_gesture_out_stream.flush();
+                g_gesture_stream.flush();
             }
         }
     });
@@ -1250,6 +1409,7 @@ Java_org_xvisio_xvsdk_XCamera_nSaveData(JNIEnv *env, jclass type,
     {
         stopSaveData();
     }
+
     return g_recording;
 }
 
